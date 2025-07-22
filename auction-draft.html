@@ -4,19 +4,126 @@
     <meta charset="UTF-8">
     <title>Dynasty FFL Auction Draft Results</title>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        h1 { color: #2c3e50; }
-        nav { margin-bottom: 2em; }
-        nav a { margin-right: 1em; text-decoration: none; color: #2980b9; }
-        nav a:hover { text-decoration: underline; }
-        .filters { margin-bottom: 1em; }
-        .filters label { margin-right: 1em; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
-        th { background: #f2f2f2; }
-        tr:nth-child(even) { background: #fafafa; }
-        .section { margin-bottom: 2em; }
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #f6f8fa;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #222;
+            font-weight: 700;
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        nav {
+            background: #222;
+            padding: 1em 0.5em;
+            margin-bottom: 2em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            justify-content: center;
+        }
+        nav a {
+            margin: 0 1em;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 500;
+            font-size: 1.05em;
+            transition: color 0.2s;
+        }
+        nav a:hover {
+            color: #00bcd4;
+        }
+        .section {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            padding: 2em 2em 1em 2em;
+        }
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+            align-items: center;
+            margin-bottom: 1.5em;
+        }
+        .filters label {
+            font-weight: 500;
+            color: #333;
+        }
+        .filters select,
+        .filters input {
+            padding: 0.5em 0.8em;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 1em;
+            background: #f6f8fa;
+            transition: border-color 0.2s;
+        }
+        .filters select:focus,
+        .filters input:focus {
+            border-color: #00bcd4;
+            outline: none;
+        }
+        #clear-filters {
+            background: #00bcd4;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.6em 1.2em;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #clear-filters:hover {
+            background: #0097a7;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+        }
+        th, td {
+            border: none;
+            padding: 10px 12px;
+            text-align: left;
+        }
+        th {
+            background: #e3e8ee;
+            color: #222;
+            font-weight: 700;
+            font-size: 1em;
+        }
+        tr:nth-child(even) {
+            background: #f6f8fa;
+        }
+        tr:hover {
+            background: #e0f7fa;
+        }
+        @media (max-width: 900px) {
+            .section { padding: 1em; }
+            th, td { padding: 8px 6px; }
+        }
+        @media (max-width: 600px) {
+            .filters { flex-direction: column; align-items: stretch; }
+            .section { padding: 0.5em; }
+            table, thead, tbody, th, td, tr { display: block; }
+            th, td { padding: 8px 4px; }
+            th { background: #e3e8ee; }
+            tr { margin-bottom: 1em; }
+        }
     </style>
 </head>
 <body>
@@ -35,6 +142,10 @@
             <label>
                 Player:
                 <input type="text" id="filter-player" placeholder="Search player...">
+            </label>
+            <label>
+                Position:
+                <select id="filter-position"><option value="">All</option></select>
             </label>
             <button id="clear-filters">Clear</button>
         </div>
@@ -59,7 +170,7 @@
         }
 
         function populateDropdowns(data) {
-            // Try to find the Team column index
+            // Team dropdown
             const teamIdx = headers.findIndex(h => /team/i.test(h));
             const teams = new Set();
             data.forEach(row => {
@@ -73,18 +184,35 @@
                 option.textContent = opt;
                 teamSel.appendChild(option);
             });
+
+            // Position dropdown
+            const posIdx = headers.findIndex(h => /position/i.test(h));
+            const positions = new Set();
+            data.forEach(row => {
+                if (posIdx >= 0 && row[posIdx]) positions.add(row[posIdx]);
+            });
+            const posSel = document.getElementById('filter-position');
+            while (posSel.options.length > 1) posSel.remove(1);
+            Array.from(positions).sort().forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt;
+                posSel.appendChild(option);
+            });
         }
 
         function filterData() {
             const team = document.getElementById('filter-team').value.toLowerCase();
             const player = document.getElementById('filter-player').value.toLowerCase();
-            // Try to find the Team and Player column indexes
+            const position = document.getElementById('filter-position').value.toLowerCase();
             const teamIdx = headers.findIndex(h => /team/i.test(h));
             const playerIdx = headers.findIndex(h => /player/i.test(h));
+            const posIdx = headers.findIndex(h => /position/i.test(h));
             const filtered = allData.filter(row => {
                 const teamMatch = !team || (teamIdx >= 0 && row[teamIdx].toLowerCase() === team);
                 const playerMatch = !player || (playerIdx >= 0 && row[playerIdx].toLowerCase().includes(player));
-                return teamMatch && playerMatch;
+                const posMatch = !position || (posIdx >= 0 && row[posIdx].toLowerCase() === position);
+                return teamMatch && playerMatch && posMatch;
             });
             renderTable(filtered);
         }
@@ -96,9 +224,7 @@
                     header: false,
                     skipEmptyLines: true,
                     complete: function(results) {
-                        // Assign headers from the first row
                         headers = results.data[0];
-                        // Remove header and commented lines from data
                         allData = results.data.slice(1).filter(row =>
                             row[0] && !row[0].startsWith('//')
                         );
@@ -113,9 +239,11 @@
 
         document.getElementById('filter-team').addEventListener('change', filterData);
         document.getElementById('filter-player').addEventListener('input', filterData);
+        document.getElementById('filter-position').addEventListener('change', filterData);
         document.getElementById('clear-filters').addEventListener('click', () => {
             document.getElementById('filter-team').value = '';
             document.getElementById('filter-player').value = '';
+            document.getElementById('filter-position').value = '';
             renderTable(allData);
         });
     </script>
