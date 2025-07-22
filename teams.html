@@ -9,21 +9,21 @@
 </head>
 <body>
     <h1>Dynasty FFL Teams</h1>
-    <nav>
-        <a href="index.html">Home</a>
-        <a href="index.html#about">About</a>
-        <a href="index.html#rosters">Rosters</a>
-        <a href="schedule.html">Schedule</a>
-        <a href="teams.html">Teams</a>
-    </nav>
-    <div class="team-list" id="team-list">
-        <!-- Teams will be loaded here -->
+    <div id="menu-bar"></div>
+    <script>
+        fetch('menu.html')
+            .then(r => r.text())
+            .then(html => document.getElementById('menu-bar').outerHTML = html);
+    </script>
+    <div class="section">
+        <div class="team-list" id="team-list">
+            <!-- Teams will be loaded here -->
+        </div>
     </div>
     <script>
         const teamsCsvPath = '../data/Dynasty League Data - Teams.csv';
         const ownersCsvPath = '../data/Dynasty League Data - Owners.csv';
 
-        // Get the latest team info for each team number
         function getLatestTeams(data) {
             const latest = {};
             data.forEach(row => {
@@ -36,7 +36,6 @@
             return Object.values(latest).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
         }
 
-        // Get the current owner for each team number (latest year)
         function getCurrentOwners(owners) {
             const current = {};
             owners.forEach(row => {
@@ -52,7 +51,6 @@
             return current;
         }
 
-        // Render the team cards with current owner
         function renderTeams(teams, currentOwners) {
             const container = document.getElementById('team-list');
             container.innerHTML = '';
@@ -63,14 +61,17 @@
                 const card = document.createElement('div');
                 card.className = 'team-card';
                 card.innerHTML = `
-                    <a href="team-history.html?team=${teamNum}" style="text-decoration:none;color:inherit;display:block;">
+                    <a href="team-history.html?team=${teamNum}" class="team-card-link">
                         <div class="team-number">#${teamNum}</div>
                         <div class="team-card-content">
-                            <img src="${team[3] || ''}" alt="${team[2]} logo" onerror="this.style.display='none'">
-                            <h3>${team[2]}</h3>
-                            <ul style="list-style:none;padding:0;">
-                                <li><strong>Current Owner:</strong> ${owner}</li>
-                            </ul>
+                            <div class="team-logo-wrap">
+                                <img src="${team[3] || ''}" alt="${team[2]} logo" onerror="this.style.display='none'">
+                            </div>
+                            <h3 class="team-name">${team[2]}</h3>
+                            <div class="team-owner">
+                                <span class="owner-label">Owner:</span>
+                                <span class="owner-name">${owner}</span>
+                            </div>
                         </div>
                     </a>
                 `;
@@ -78,7 +79,6 @@
             });
         }
 
-        // Load both CSVs and render
         Promise.all([
             fetch(teamsCsvPath).then(r => r.text()),
             fetch(ownersCsvPath).then(r => r.text())
