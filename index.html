@@ -2,63 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dynasty FFL League</title>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Oswald:700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Football Central</title>
     <link rel="stylesheet" href="theme.css">
-    <script src="main.js"></script>
-    <script>loadMenuBar();</script>
 </head>
 <body>
-    <h1 class="football-title">Dynasty Fantasy Football League</h1>
-    <div id="menu-bar"></div>
-    <div class="section" id="about">
-        <h2>About the League</h2>
-        <p>
-            Welcome to the Dynasty FFL! Established in 2011, our league is built for fantasy football managers who love the challenge of long-term team building, trading, and competition. 
-            Each manager keeps their roster year after year, making every draft pick and trade matter. 
-        </p>
-        <ul>
-            <li><strong>Founded:</strong> 2011</li>
-            <li><strong>Format:</strong> Dynasty (keep all players, annual rookie draft)</li>
-            <li><strong>Teams:</strong> 14</li>
-            <li><strong>Commissioner:</strong> John Thompson</li>
-            <li><strong>League Website:</strong> <a href="https://www.rtsports.com/fantasy-football-league/81689">rtsports.com</a></li>
-        </ul>
-    </div>
-    <div class="section rss-feed-section" style="max-width: 700px; margin: 2em auto;">
-        <div class="rss-feed-title">Latest Fantasy Football Headlines</div>
-        <div id="rss-feed-container">Loading...</div>
-    </div>
-    <script>
-        // RSS feed viewer for NBC Sports Fantasy Football Player News
-        const rssUrl = "https://www.nbcsports.com/fantasy/football/player-news.rss";
-        function fetchRSSFeed(url) {
-            fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.items || !data.items.length) {
-                        document.getElementById('rss-feed-container').innerHTML = "<div>No news found.</div>";
-                        return;
-                    }
-                    let html = "";
-                    data.items.slice(0, 10).forEach(item => {
-                        html += `
-                        <div class="rss-item">
-                            <div class="rss-item-title"><a href="${item.link}" target="_blank">${item.title}</a></div>
-                            <div class="rss-item-date">${new Date(item.pubDate).toLocaleString()}</div>
-                            <div class="rss-item-desc">${item.description}</div>
-                        </div>
-                        `;
-                    });
-                    document.getElementById('rss-feed-container').innerHTML = html;
-                })
-                .catch(() => {
-                    document.getElementById('rss-feed-container').innerHTML = "<div>Unable to load RSS feed.</div>";
-                });
-        }
-        fetchRSSFeed(rssUrl);
-    </script>
+    <header>
+        <h1>Fantasy Football Central</h1>
+    <div id="shared-menu"></div>
+    </header>
+    <main>
+        <section class="welcome">
+            <h2>Welcome to Your Fantasy Football Hub!</h2>
+            <p>Stay up to date with league news, schedules, and more. Use the menu to explore teams, results, and transactions.</p>
+        </section>
+        <section class="overview">
+            <h3>Season Overview</h3>
+            <ul>
+                <li>Latest News and Updates</li>
+                <li>League Standings</li>
+                <li>Upcoming Matchups</li>
+                <li>Recent Transactions</li>
+            </ul>
+        </section>
+    <div id="news-module"></div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Fantasy Football Central</p>
+    </footer>
+    <script src="main.js"></script>
 </body>
 </html>
