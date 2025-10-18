@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Stadium Night -->
-    <!-- Application Structure Plan: The application is a single-page dashboard with two primary views. The analysis modal has been enhanced to pull its section headers from the database (`analysisTitle`, `analysis1Title`, `analysis2Title`), providing full content flexibility. Fallback titles are used if the fields are not present, ensuring backward compatibility. This makes the modal a fully data-driven component. -->
+    <!-- Application Structure Plan: The application is a single-page dashboard. The "Past Weeks' Results" cards have been updated to color-code the "vs. Spread" badge based on predictive accuracy (green for correct, red for incorrect, blue for a push), providing immediate visual feedback on forecast performance. -->
     <!-- Visualization & Content Choices: 
-        - Report Info: Analysis section titles. -> Goal: Customize/Inform -> Presentation: The `<h4>` tags within the analysis modal now have their text content set dynamically. -> Interaction: None. -> Justification: This change provides maximum flexibility, allowing the data source to control all aspects of the analysis presentation, which is ideal for a content-managed system. -> Method: Vanilla JS, setting `textContent` with a fallback.
+        - Report Info: Historical game data including spread and predicted spread outcome. -> Goal: Analyze/Compare -> Presentation: The "vs. Spread" badge on history cards now uses a consistent background but changes its text color to green (correct), red (incorrect), or blue (push). -> Interaction: None. -> Justification: This is a user-requested aesthetic improvement that enhances the clarity of the results by using color more subtly and effectively. -> Method: Vanilla JS to apply different Tailwind text-color classes based on the outcome logic.
         - All other visualization and content choices remain the same.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
@@ -342,6 +342,41 @@
             const correctPick = predictedWinner === actualWinner;
             const hasActualScore = game.actual && (game.actual.away !== 0 || game.actual.home !== 0);
 
+            let spreadResultText = 'N/A';
+            let spreadResultBgClass = 'bg-gray-600/20';
+            let spreadResultTextClass = 'text-gray-400';
+
+            if (hasActualScore && game.spread) {
+                const spreadMatch = game.spread.match(/([A-Za-z\s.'-]+) (-?\d+\.?\d*)/);
+                if (spreadMatch) {
+                    const favTeam = spreadMatch[1].trim();
+                    const spreadValue = parseFloat(spreadMatch[2]);
+                    const isAwayFav = game.teams.away.includes(favTeam);
+                    const homeSpread = isAwayFav ? -spreadValue : spreadValue;
+                    const actualMargin = game.actual.home - game.actual.away;
+                    const resultVsSpread = actualMargin + homeSpread;
+
+                    spreadResultBgClass = 'bg-blue-500/20'; // Default background for all outcomes
+
+                    if (resultVsSpread === 0) {
+                        spreadResultText = 'PUSH';
+                        spreadResultTextClass = 'text-blue-300';
+                    } else {
+                        const actualCoveringTeam = resultVsSpread > 0 ? game.teams.home : game.teams.away;
+                        const actualCoveringTeamLastName = actualCoveringTeam.split(' ').pop();
+                        spreadResultText = `${actualCoveringTeamLastName} Cover`;
+
+                        const predictedOutcomeTeam = (game.outcomeVsSpread || '').replace(' Cover', '');
+
+                        if (actualCoveringTeam.includes(predictedOutcomeTeam)) {
+                            spreadResultTextClass = 'text-green-400'; // Correct prediction
+                        } else {
+                            spreadResultTextClass = 'text-red-400'; // Incorrect prediction
+                        }
+                    }
+                }
+            }
+
             return `
                 <div class="bg-gray-800 rounded-xl shadow-lg p-4 flex flex-col">
                     <div class="flex justify-between items-center mb-2">
@@ -369,8 +404,13 @@
                         </div>
                     </div>
                     ${hasActualScore ? `
-                    <div class="mt-3 text-center text-xs font-bold py-1 rounded ${correctPick ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
-                        ${correctPick ? 'CORRECT PICK' : 'INCORRECT PICK'}
+                    <div class="mt-3 grid grid-cols-2 gap-2 text-center text-xs font-bold">
+                        <div class="py-1 rounded ${correctPick ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                            ${correctPick ? 'CORRECT PICK' : 'INCORRECT PICK'}
+                        </div>
+                        <div class="py-1 rounded ${spreadResultBgClass} ${spreadResultTextClass}">
+                            ${spreadResultText}
+                        </div>
                     </div>` : `
                     <div class="mt-3 text-center text-xs font-bold py-1 rounded bg-gray-600/20 text-gray-400">
                         AWAITING FINAL SCORE
