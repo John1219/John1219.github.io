@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFL Weekly Predictions</title>
+    <title>Fourth Down Capital</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Stadium Night -->
-    <!-- Application Structure Plan: The application is a single-page dashboard. The "Past Weeks' Results" cards have been updated to display both the 'Correct Pick' status and the original 'outcomeVsSpread' prediction in a two-badge layout, providing a comprehensive view of past performance. -->
+    <!-- Application Structure Plan: The application is a single-page dashboard with two primary views. The analysis modal has been enhanced to pull its section headers from the database (`analysisTitle`, `analysis1Title`, `analysis2Title`), providing full content flexibility. Fallback titles are used if the fields are not present, ensuring backward compatibility. This makes the modal a fully data-driven component. -->
     <!-- Visualization & Content Choices: 
-        - Report Info: Historical game data. -> Goal: Compare/Analyze -> Presentation: The history cards now feature two badges: one for the outright win/loss prediction and one displaying the original predicted outcome vs. the spread. -> Interaction: None. -> Justification: This restores a key feature based on user feedback, allowing for a complete analysis of both types of predictions (moneyline and spread) against the actual results. -> Method: The card generation logic was updated to display both results in a clean, two-column badge layout.
+        - Report Info: Analysis section titles. -> Goal: Customize/Inform -> Presentation: The `<h4>` tags within the analysis modal now have their text content set dynamically. -> Interaction: None. -> Justification: This change provides maximum flexibility, allowing the data source to control all aspects of the analysis presentation, which is ideal for a content-managed system. -> Method: Vanilla JS, setting `textContent` with a fallback.
         - All other visualization and content choices remain the same.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
@@ -40,10 +40,13 @@
 
     <header class="bg-gray-800 shadow-lg sticky top-0 z-40">
         <div class="container mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center">
-            <h1 class="text-2xl md:text-3xl font-black text-white tracking-wider mb-4 sm:mb-0">
-                <span class="text-indigo-400">NFL</span> FORECAST
-            </h1>
-            <nav id="main-nav" class="flex space-x-2 bg-gray-700 p-1 rounded-lg">
+            <div class="flex items-center space-x-4">
+                <img src="logo.png" alt="Fourth Down Capital Logo" class="h-12">
+                <h1 class="text-2xl md:text-3xl font-black text-white tracking-wider">
+                    Fourth Down Capital
+                </h1>
+            </div>
+            <nav id="main-nav" class="flex space-x-2 bg-gray-700 p-1 rounded-lg mt-4 sm:mt-0">
                 <button data-view="predictions" class="nav-button nav-active px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200">This Week's Predictions</button>
                 <button data-view="history" class="nav-button px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200 hover:bg-gray-600">Past Weeks' Results</button>
             </nav>
@@ -141,7 +144,7 @@
     </main>
     
     <footer class="text-center py-6 mt-8 border-t border-gray-700">
-        <p class="text-gray-500 text-sm">&copy; 2025 NFL Forecast. All data is for entertainment purposes only.</p>
+        <p class="text-gray-500 text-sm">&copy; 2025 Fourth Down Capital. All data is for entertainment purposes only.</p>
     </footer>
 
     <div id="analysis-modal" class="modal fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
@@ -373,16 +376,14 @@
                         <div class="py-1 rounded ${correctPick ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
                             ${correctPick ? 'CORRECT PICK' : 'INCORRECT PICK'}
                         </div>
+                        <div class="py-1 rounded bg-blue-500/20 text-blue-300">
+                           Pred: ${game.outcomeVsSpread || 'N/A'}
+                        </div>
                         ` : `
                         <div class="py-1 rounded bg-gray-600/20 text-gray-400 col-span-2">
                            AWAITING FINAL SCORE
                         </div>
                         `}
-                         ${hasActualScore ? `
-                        <div class="py-1 rounded bg-blue-500/20 text-blue-300">
-                           ${game.outcomeVsSpread || 'N/A'}
-                        </div>
-                        ` : ''}
                     </div>
                 </div>
             `;
@@ -692,4 +693,3 @@
     </script>
 </body>
 </html>
-
