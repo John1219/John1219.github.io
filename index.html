@@ -7,15 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Stadium Night -->
-    <!-- Application Structure Plan: The application is designed as a single-page dashboard with two primary, switchable views: "This Week's Predictions" and "Past Weeks' Results". This structure was chosen to provide users with a clear, focused experience. The default view immediately presents the most current and relevant information (this week's games) using a visually scannable card layout. Detailed game analysis is hidden by default within modals, which are triggered by a "View Analysis" button on each card. This prevents information overload and allows users to optionally drill down into specifics without leaving the main view. The secondary view for past results uses a similar card layout for consistency and is controlled by a simple dropdown, making historical exploration intuitive. This separation of current vs. past and summary vs. detail creates a logical user flow that prioritizes ease of navigation and quick information absorption. A hidden admin panel, accessible via a URL parameter, allows for easy data updates and week rollovers using Firestore as the backend. -->
+    <!-- Application Structure Plan: The application is a single-page dashboard with two primary views: "This Week's Predictions" and "Past Weeks' Results". This structure provides a clear, focused experience. The default view presents current information in a card layout, with detailed analysis in modals to prevent information overload. The secondary view for past results uses a similar card layout for consistency and is controlled by a dropdown for intuitive historical exploration. A hidden admin panel, accessible via a URL parameter, allows for data updates. A key feature is the admin panel's ability to "finalize" a week, which archives the predictions and adds placeholder 'actual' score fields, and a separate admin editor for updating those actual scores for past weeks. -->
     <!-- Visualization & Content Choices: 
         - Report Info: Team matchups, predicted scores, and spreads. -> Goal: Inform/Compare -> Presentation: HTML/CSS Game Cards with official team logos. -> Interaction: None. -> Justification: Cards are a standard, effective UI pattern for presenting discrete, comparable items. Using official logos enhances visual appeal and team recognition. -> Method: Tailwind CSS, IMG tags.
-        - Report Info: Detailed game-by-game breakdown text. -> Goal: Inform (Detailed) -> Presentation: Text block inside a modal window. -> Interaction: Click "View Analysis" button to open, "Close" button to dismiss. -> Justification: Modals provide detailed context on-demand without disrupting the layout of the main page, focusing the user's attention. -> Method: Vanilla JS.
-        - Report Info: All game predictions for the week. -> Goal: Organize/Explore -> Presentation: Interactive Navigation Tabs/Buttons ("This Week", "Past Weeks"). -> Interaction: Click to switch between the main content views. -> Justification: This is the core navigation for the SPA, allowing users to move between the two main content sections cleanly. -> Method: Vanilla JS.
-        - Report Info: Historical game data (predicted vs. actual). -> Goal: Compare/Organize -> Presentation: Dropdown selector for week selection and dynamically rendered result cards. -> Interaction: Select a week from the dropdown to load its data. -> Justification: A dropdown is a space-efficient way to handle historical navigation with a potentially growing number of weeks. -> Method: Vanilla JS.
-        - Report Info: Predicted score margin vs. consensus spread for each game. -> Goal: Compare/Analyze -> Presentation: Horizontal Bar Chart. -> Interaction: Hover for tooltips with specific values. -> Justification: A bar chart provides a powerful, at-a-glance visualization of performance against the spread, making it easy to see the biggest predicted upsets and safest bets. -> Library: Chart.js (Canvas).
-        - Report Info: Week 6 Predictive Scorecard (Table 1). -> Goal: Summarize/Inform -> Presentation: Styled HTML Table. -> Interaction: None. -> Justification: A table is the most direct and clear way to present tabular data, providing a high-level summary before users explore individual game cards. -> Method: Tailwind CSS and dynamic JS rendering.
-        - Data Management: -> Goal: Allow easy updates and archiving. -> Presentation: Hidden admin panel with a JSON editor. -> Interaction: Load current data, save updates, and "finalize week" to archive and create a new week. -> Justification: Separates data management from the display, enabling non-technical users to update content. Firestore provides a scalable and real-time backend. -> Method: Firebase Firestore, Vanilla JS.
+        - Report Info: Detailed game-by-game breakdown text. -> Goal: Inform (Detailed) -> Presentation: Text block inside a modal window. -> Interaction: Click "View Analysis" button to open, "Close" button to dismiss. -> Justification: Modals provide detailed context on-demand without disrupting the layout of the main page. -> Method: Vanilla JS.
+        - Report Info: Historical game data (predicted vs. actual). -> Goal: Compare/Organize -> Presentation: Redesigned history cards showing both predicted and actual scores, with a "Correct Pick" indicator. -> Interaction: Select a week from a dropdown. -> Justification: This directly addresses user feedback, providing a clear comparison of forecast vs. reality, which is a core value proposition of the app. -> Method: Vanilla JS.
+        - Data Management & Entry: -> Goal: Allow easy updates and archiving, including entry of final scores. -> Presentation: A primary admin editor for the current week's predictions, and a secondary, context-aware editor for past weeks' actual scores. -> Interaction: The "Finalize" button now adds `actual: {away: 0, home: 0}` to each game. The secondary editor appears only on the "Past Weeks" tab when in admin mode. -> Justification: This creates a robust workflow for the site administrator, separating the predictive data entry from the results data entry. -> Method: Firebase Firestore, Vanilla JS.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -32,7 +29,7 @@
             background-color: #4f46e5 !important;
             color: white !important;
         }
-        #admin-json-editor {
+        #admin-json-editor, #admin-past-json-editor {
             font-family: 'Courier New', Courier, monospace;
             min-height: 400px;
         }
@@ -58,17 +55,30 @@
     <main class="container mx-auto p-4 md:p-8">
         
         <section id="admin-view" class="hidden mb-12 bg-gray-800 border border-indigo-500 rounded-xl p-6">
-            <h2 class="text-3xl font-bold text-center text-indigo-400 mb-4">Admin Control Panel</h2>
-            <div class="mb-4">
-                <label for="admin-json-editor" class="block mb-2 text-sm font-medium text-gray-300">Current Week's Data (JSON)</label>
-                <textarea id="admin-json-editor" class="w-full p-2.5 bg-gray-900 text-gray-200 border border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            <div id="admin-current-week-editor">
+                <h2 class="text-3xl font-bold text-center text-indigo-400 mb-4">Admin: Current Week Predictions</h2>
+                <div class="mb-4">
+                    <label for="admin-json-editor" class="block mb-2 text-sm font-medium text-gray-300">Current Week's Game Predictions (JSON)</label>
+                    <textarea id="admin-json-editor" class="w-full p-2.5 bg-gray-900 text-gray-200 border border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="save-week-data-btn" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save Predictions</button>
+                    <button id="finalize-week-btn" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Finalize Current Week & Advance</button>
+                </div>
+                 <p class="text-center mt-4 text-xs text-yellow-400">Warning: Finalizing the week is irreversible and will add placeholders for actual scores.</p>
+                <p id="admin-status" class="text-center mt-2 text-sm"></p>
             </div>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button id="save-week-data-btn" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save Changes</button>
-                <button id="finalize-week-btn" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Finalize Current Week & Advance</button>
+
+            <div id="admin-past-week-editor" class="hidden mt-8">
+                 <h2 class="text-3xl font-bold text-center text-indigo-400 mb-4">Admin: Edit Past Week's Actual Scores</h2>
+                 <p class="text-center text-sm text-gray-400 mb-4">Select a week from the main dropdown to load its data. Update the `actual` scores and save.</p>
+                <div class="mb-4">
+                    <label for="admin-past-json-editor" class="block mb-2 text-sm font-medium text-gray-300">Selected Past Week's Data (JSON)</label>
+                    <textarea id="admin-past-json-editor" class="w-full p-2.5 bg-gray-900 text-gray-200 border border-gray-600 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                </div>
+                <button id="save-past-week-data-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save Actual Scores for Selected Week</button>
+                <p id="admin-past-status" class="text-center mt-4 text-sm"></p>
             </div>
-             <p class="text-center mt-4 text-xs text-yellow-400">Warning: Finalizing the week is irreversible and will create the next week's empty template.</p>
-            <p id="admin-status" class="text-center mt-2 text-sm"></p>
         </section>
 
 
@@ -118,7 +128,7 @@
         <section id="history-view" class="hidden">
              <div class="text-center mb-8">
                 <h2 class="text-4xl font-bold text-white">Past Weeks' Results</h2>
-                 <p class="text-gray-400 mt-2 max-w-2xl mx-auto">Review the prediction accuracy from previous weeks. Select a week below to see the projected scores versus the actual final scores for each game.</p>
+                 <p class="text-gray-400 mt-2 max-w-2xl mx-auto">Review the archived predictions from previous weeks. Select a week below to see the projected scores versus the actual final scores for each game.</p>
             </div>
             <div class="flex justify-center mb-6">
                 <select id="week-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-xs p-2.5">
@@ -126,6 +136,7 @@
                 </select>
             </div>
             <div id="history-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <p id="history-loading-msg" class="md:col-span-2 lg:col-span-3 text-center">Select a week to view results.</p>
             </div>
         </section>
 
@@ -192,6 +203,8 @@
             'Detroit Lions': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/det.png' },
             'Carolina Panthers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/car.png' },
             'Los Angeles Chargers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/lac.png' },
+            'New Orleans Saints': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/no.png' },
+            'Tennessee Titans': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/ten.png' },
         };
         
         let db;
@@ -204,6 +217,7 @@
         const gameCardsContainer = document.getElementById('game-cards-container');
         const summaryTableBody = document.getElementById('summary-table-body');
         const historyCardsContainer = document.getElementById('history-cards-container');
+        const historyLoadingMsg = document.getElementById('history-loading-msg');
         const weekSelector = document.getElementById('week-selector');
         const mainNav = document.getElementById('main-nav');
         const views = {
@@ -219,10 +233,15 @@
 
         // Admin UI Elements
         const adminView = document.getElementById('admin-view');
+        const adminCurrentWeekEditor = document.getElementById('admin-current-week-editor');
+        const adminPastWeekEditor = document.getElementById('admin-past-week-editor');
         const adminJsonEditor = document.getElementById('admin-json-editor');
+        const adminPastJsonEditor = document.getElementById('admin-past-json-editor');
         const saveWeekDataBtn = document.getElementById('save-week-data-btn');
+        const savePastWeekDataBtn = document.getElementById('save-past-week-data-btn');
         const finalizeWeekBtn = document.getElementById('finalize-week-btn');
         const adminStatus = document.getElementById('admin-status');
+        const adminPastStatus = document.getElementById('admin-past-status');
 
         const getTeamInfo = (name) => teamData[name] || { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png' };
 
@@ -269,9 +288,16 @@
         };
 
         const createHistoryCard = (game) => {
-            const predictedWinner = game.prediction.away > game.prediction.home ? 'away' : 'home';
-            const actualWinner = game.actual.away > game.actual.home ? 'away' : 'home';
+            let predictedWinner = 'tie';
+            if (game.prediction.away > game.prediction.home) predictedWinner = 'away';
+            if (game.prediction.home > game.prediction.away) predictedWinner = 'home';
+            
+            let actualWinner = 'tie';
+            if (game.actual && game.actual.away > game.actual.home) actualWinner = 'away';
+            if (game.actual && game.actual.home > game.actual.away) actualWinner = 'home';
+
             const correctPick = predictedWinner === actualWinner;
+            const hasActualScore = game.actual && (game.actual.away !== 0 || game.actual.home !== 0);
 
             return `
                 <div class="bg-gray-800 rounded-xl shadow-lg p-4 flex flex-col">
@@ -283,9 +309,9 @@
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400">Predicted:</span>
                             <div>
-                                <span class="font-bold ${predictedWinner === 'away' ? 'text-green-400' : ''}">${game.prediction.away}</span>
+                                <span class="font-bold ${predictedWinner === 'away' ? 'text-indigo-300' : ''}">${game.prediction.away}</span>
                                 -
-                                <span class="font-bold ${predictedWinner === 'home' ? 'text-green-400' : ''}">${game.prediction.home}</span>
+                                <span class="font-bold ${predictedWinner === 'home' ? 'text-indigo-300' : ''}">${game.prediction.home}</span>
                             </div>
                         </div>
                     </div>
@@ -293,15 +319,20 @@
                          <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400">Actual:</span>
                             <div>
-                                <span class="font-bold ${actualWinner === 'away' ? 'text-white' : ''}">${game.actual.away}</span>
+                                <span class="font-bold ${actualWinner === 'away' ? 'text-white' : ''}">${hasActualScore ? game.actual.away : '?'}</span>
                                 -
-                                <span class="font-bold ${actualWinner === 'home' ? 'text-white' : ''}">${game.actual.home}</span>
+                                <span class="font-bold ${actualWinner === 'home' ? 'text-white' : ''}">${hasActualScore ? game.actual.home : '?'}</span>
                             </div>
                         </div>
                     </div>
+                    ${hasActualScore ? `
                     <div class="mt-3 text-center text-xs font-bold py-1 rounded ${correctPick ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
                         ${correctPick ? 'CORRECT PICK' : 'INCORRECT PICK'}
+                    </div>` : `
+                    <div class="mt-3 text-center text-xs font-bold py-1 rounded bg-gray-600/20 text-gray-400">
+                        AWAITING FINAL SCORE
                     </div>
+                    `}
                 </div>
             `;
         };
@@ -356,6 +387,8 @@
 
         const renderHistoryView = (selectedWeek) => {
             historyCardsContainer.innerHTML = '';
+            historyLoadingMsg.classList.add('hidden');
+
             const weekData = pastWeeksData.find(w => w.weekNumber == selectedWeek);
             const games = weekData ? weekData.games : [];
 
@@ -363,8 +396,14 @@
                 games.forEach(game => {
                     historyCardsContainer.innerHTML += createHistoryCard(game);
                 });
+                if (adminView.classList.contains('hidden') === false) {
+                    adminPastJsonEditor.value = JSON.stringify(games, null, 2);
+                }
             } else {
                 historyCardsContainer.innerHTML = `<p class="md:col-span-2 lg:col-span-3 text-center">No results available for this week.</p>`;
+                if (adminView.classList.contains('hidden') === false) {
+                    adminPastJsonEditor.value = '';
+                }
             }
         };
 
@@ -372,6 +411,9 @@
             weekSelector.innerHTML = '';
             if (pastWeeksData.length === 0) {
                 weekSelector.innerHTML = `<option>No past weeks available</option>`;
+                historyCardsContainer.innerHTML = '';
+                historyLoadingMsg.textContent = "No past weeks have been archived yet.";
+                historyLoadingMsg.classList.remove('hidden');
                 return;
             }
             pastWeeksData.sort((a, b) => b.weekNumber - a.weekNumber);
@@ -454,6 +496,16 @@
                     views[view].classList.remove('hidden');
                     mainNav.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('nav-active'));
                     e.target.classList.add('nav-active');
+
+                    if (adminView.classList.contains('hidden') === false) {
+                        if (view === 'history') {
+                            adminCurrentWeekEditor.classList.add('hidden');
+                            adminPastWeekEditor.classList.remove('hidden');
+                        } else {
+                            adminCurrentWeekEditor.classList.remove('hidden');
+                            adminPastWeekEditor.classList.add('hidden');
+                        }
+                    }
                 }
             });
 
@@ -486,12 +538,37 @@
                 setTimeout(() => adminStatus.textContent = '', 3000);
             });
 
+            savePastWeekDataBtn.addEventListener('click', async () => {
+                adminPastStatus.textContent = 'Saving...';
+                const selectedWeekNumber = weekSelector.value;
+                const weekData = pastWeeksData.find(w => w.weekNumber == selectedWeekNumber);
+                if (!weekData) {
+                    adminPastStatus.textContent = 'Error: No week selected or found.';
+                    return;
+                }
+                try {
+                    const updatedGames = JSON.parse(adminPastJsonEditor.value);
+                    const weekDocRef = doc(db, "nfl_predictions", weekData.id);
+                    await setDoc(weekDocRef, { games: updatedGames }, { merge: true });
+                    adminPastStatus.textContent = `Successfully saved Week ${selectedWeekNumber}!`;
+                } catch (error) {
+                    console.error("Error saving past week data:", error);
+                    adminPastStatus.textContent = `Error saving: ${error.message}`;
+                }
+                setTimeout(() => adminPastStatus.textContent = '', 3000);
+            });
+
             finalizeWeekBtn.addEventListener('click', async () => {
                 adminStatus.textContent = 'Finalizing...';
                 try {
+                    const gamesWithActuals = currentWeekData.games.map(game => ({
+                        ...game,
+                        actual: { away: 0, home: 0 }
+                    }));
+
                     const batch = writeBatch(db);
                     const currentWeekDocRef = doc(db, "nfl_predictions", currentWeekData.id);
-                    batch.update(currentWeekDocRef, { status: "past" });
+                    batch.set(currentWeekDocRef, { ...currentWeekData, games: gamesWithActuals, status: "past" }, { merge: true });
 
                     const nextWeekNumber = currentWeekData.weekNumber + 1;
                     const nextWeekDocRef = doc(db, "nfl_predictions", `week_${nextWeekNumber}`);
