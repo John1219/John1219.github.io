@@ -7,12 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Stadium Night -->
-    <!-- Application Structure Plan: The application is a single-page dashboard with two primary views: "This Week's Predictions" and "Past Weeks' Results". This structure provides a clear, focused experience. The default view presents current information in a card layout, with detailed analysis in modals to prevent information overload. The secondary view for past results uses a similar card layout for consistency and is controlled by a dropdown for intuitive historical exploration. A hidden admin panel, accessible via a URL parameter, allows for data updates. A key feature is the admin panel's ability to "finalize" a week, which archives the predictions and adds placeholder 'actual' score fields, and a separate admin editor for updating those actual scores for past weeks. -->
+    <!-- Application Structure Plan: The application is a single-page dashboard with two primary views. The analysis modal has been enhanced to pull its section headers from the database (`analysisTitle`, `analysis1Title`, `analysis2Title`), providing full content flexibility. Fallback titles are used if the fields are not present, ensuring backward compatibility. This makes the modal a fully data-driven component. -->
     <!-- Visualization & Content Choices: 
-        - Report Info: Team matchups, predicted scores, and spreads. -> Goal: Inform/Compare -> Presentation: HTML/CSS Game Cards with official team logos. -> Interaction: None. -> Justification: Cards are a standard, effective UI pattern for presenting discrete, comparable items. Using official logos enhances visual appeal and team recognition. -> Method: Tailwind CSS, IMG tags.
-        - Report Info: Detailed game-by-game breakdown text. -> Goal: Inform (Detailed) -> Presentation: Text block inside a modal window. -> Interaction: Click "View Analysis" button to open, "Close" button to dismiss. -> Justification: Modals provide detailed context on-demand without disrupting the layout of the main page. -> Method: Vanilla JS.
-        - Report Info: Historical game data (predicted vs. actual). -> Goal: Compare/Organize -> Presentation: Redesigned history cards showing both predicted and actual scores, with a "Correct Pick" indicator. -> Interaction: Select a week from a dropdown. -> Justification: This directly addresses user feedback, providing a clear comparison of forecast vs. reality, which is a core value proposition of the app. -> Method: Vanilla JS.
-        - Data Management & Entry: -> Goal: Allow easy updates and archiving, including entry of final scores. -> Presentation: A primary admin editor for the current week's predictions, and a secondary, context-aware editor for past weeks' actual scores. -> Interaction: The "Finalize" button now adds `actual: {away: 0, home: 0}` to each game. The secondary editor appears only on the "Past Weeks" tab when in admin mode. -> Justification: This creates a robust workflow for the site administrator, separating the predictive data entry from the results data entry. -> Method: Firebase Firestore, Vanilla JS.
+        - Report Info: Analysis section titles. -> Goal: Customize/Inform -> Presentation: The `<h4>` tags within the analysis modal now have their text content set dynamically. -> Interaction: None. -> Justification: This change provides maximum flexibility, allowing the data source to control all aspects of the analysis presentation, which is ideal for a content-managed system. -> Method: Vanilla JS, setting `textContent` with a fallback.
+        - All other visualization and content choices remain the same.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -90,7 +88,7 @@
 
             <div id="summary-section" class="mb-12">
                  <div class="text-center mb-6">
-                    <h3 id="scorecard-title" class="text-3xl font-bold text-white">Predictive Scorecard</h3>
+                    <h3 class="text-3xl font-bold text-white">Predictive Scorecard</h3>
                     <p class="text-gray-400 mt-2 max-w-2xl mx-auto">A quick overview of all projected matchups, spreads, and outcomes for the week.</p>
                 </div>
                 <div class="bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
@@ -153,7 +151,20 @@
                 <button id="close-modal-btn" class="text-gray-400 hover:text-white">&times;</button>
             </div>
             <div class="p-6">
-                <p id="modal-body" class="text-gray-300 leading-relaxed"></p>
+                <div id="modal-body-container">
+                    <div id="analysis-section" class="mb-6">
+                        <h4 id="modal-analysis-title" class="text-lg font-semibold text-indigo-300 mb-2"></h4>
+                        <p id="modal-analysis" class="text-gray-300 leading-relaxed"></p>
+                    </div>
+                    <div id="analysis1-section" class="mb-6">
+                        <h4 id="modal-analysis1-title" class="text-lg font-semibold text-indigo-300 mb-2"></h4>
+                        <p id="modal-analysis1" class="text-gray-300 leading-relaxed"></p>
+                    </div>
+                    <div id="analysis2-section">
+                        <h4 id="modal-analysis2-title" class="text-lg font-semibold text-indigo-300 mb-2"></h4>
+                        <p id="modal-analysis2" class="text-gray-300 leading-relaxed"></p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -226,10 +237,21 @@
         };
         const modal = document.getElementById('analysis-modal');
         const modalTitle = document.getElementById('modal-title');
-        const modalBody = document.getElementById('modal-body');
+        
+        const analysisSection = document.getElementById('analysis-section');
+        const modalAnalysisTitle = document.getElementById('modal-analysis-title');
+        const modalAnalysis = document.getElementById('modal-analysis');
+        
+        const analysis1Section = document.getElementById('analysis1-section');
+        const modalAnalysis1Title = document.getElementById('modal-analysis1-title');
+        const modalAnalysis1 = document.getElementById('modal-analysis1');
+
+        const analysis2Section = document.getElementById('analysis2-section');
+        const modalAnalysis2Title = document.getElementById('modal-analysis2-title');
+        const modalAnalysis2 = document.getElementById('modal-analysis2');
+
         const closeModalBtn = document.getElementById('close-modal-btn');
         const predictionWeekTitle = document.getElementById('prediction-week-title');
-        const scorecardTitle = document.getElementById('scorecard-title');
 
         // Admin UI Elements
         const adminView = document.getElementById('admin-view');
@@ -280,7 +302,28 @@
             `;
             card.querySelector('.view-analysis-btn').addEventListener('click', () => {
                 modalTitle.textContent = `${game.teams.away} @ ${game.teams.home}`;
-                modalBody.textContent = game.analysis;
+
+                const hasAnalysis = game.analysis && game.analysis.trim() !== '';
+                analysisSection.style.display = hasAnalysis ? 'block' : 'none';
+                if(hasAnalysis) {
+                    modalAnalysisTitle.textContent = game.analysisTitle || 'Key Matchup Analysis';
+                    modalAnalysis.textContent = game.analysis;
+                }
+                
+                const hasAnalysis1 = game.analysis1 && game.analysis1.trim() !== '';
+                analysis1Section.style.display = hasAnalysis1 ? 'block' : 'none';
+                if(hasAnalysis1) {
+                    modalAnalysis1Title.textContent = game.analysis1Title || "Model's Deciding Factors";
+                    modalAnalysis1.textContent = game.analysis1;
+                }
+
+                const hasAnalysis2 = game.analysis2 && game.analysis2.trim() !== '';
+                analysis2Section.style.display = hasAnalysis2 ? 'block' : 'none';
+                if(hasAnalysis2) {
+                    modalAnalysis2Title.textContent = game.analysis2Title || "Rationale";
+                    modalAnalysis2.textContent = game.analysis2;
+                }
+
                 modal.classList.remove('opacity-0', 'pointer-events-none');
                 modal.querySelector('.modal-content').classList.remove('scale-95');
             });
@@ -367,7 +410,6 @@
             const games = week.games || [];
             gameCardsContainer.innerHTML = '';
             predictionWeekTitle.textContent = `Week ${week.weekNumber} Predictions`;
-            scorecardTitle.textContent = 'Predictive Scorecard';
             
             if (games.length === 0) {
                 gameCardsContainer.innerHTML = `<p class="md:col-span-2 lg:col-span-3 text-center">No games scheduled for this week yet.</p>`;
