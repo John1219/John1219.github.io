@@ -367,7 +367,7 @@
             const games = week.games || [];
             gameCardsContainer.innerHTML = '';
             predictionWeekTitle.textContent = `Week ${week.weekNumber} Predictions`;
-            scorecardTitle.textContent = `Week ${week.weekNumber} Predictive Scorecard`;
+            scorecardTitle.textContent = 'Predictive Scorecard';
             
             if (games.length === 0) {
                 gameCardsContainer.innerHTML = `<p class="md:col-span-2 lg:col-span-3 text-center">No games scheduled for this week yet.</p>`;
