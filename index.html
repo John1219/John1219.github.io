@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Stadium Night -->
-    <!-- Application Structure Plan: The application is a single-page dashboard. The "Past Weeks' Results" cards have been restored to the two-badge system, showing both the outright winner prediction accuracy and the spread prediction accuracy, with corrected logic for the color-coding. -->
+    <!-- Application Structure Plan: The application is a single-page dashboard. The "Past Weeks' Results" cards have been updated to display both the 'Correct Pick' status and the original 'outcomeVsSpread' prediction in a two-badge layout, providing a comprehensive view of past performance. -->
     <!-- Visualization & Content Choices: 
-        - Report Info: Historical game data. -> Goal: Compare/Analyze -> Presentation: The history cards now correctly display two badges: one for "Correct Pick" and one for the "vs. Spread" outcome. -> Interaction: None. -> Justification: This restores a key feature based on user feedback and provides a more complete and accurate assessment of past prediction performance. The logic for color-coding the spread badge has been fixed. -> Method: The card generation logic was reverted and corrected to calculate and display both outcomes in separate, styled badges.
+        - Report Info: Historical game data. -> Goal: Compare/Analyze -> Presentation: The history cards now feature two badges: one for the outright win/loss prediction and one displaying the original predicted outcome vs. the spread. -> Interaction: None. -> Justification: This restores a key feature based on user feedback, allowing for a complete analysis of both types of predictions (moneyline and spread) against the actual results. -> Method: The card generation logic was updated to display both results in a clean, two-column badge layout.
         - All other visualization and content choices remain the same.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
@@ -380,7 +380,7 @@
                         `}
                          ${hasActualScore ? `
                         <div class="py-1 rounded bg-blue-500/20 text-blue-300">
-                           Spread: ${game.spread || 'N/A'}
+                           ${game.outcomeVsSpread || 'N/A'}
                         </div>
                         ` : ''}
                     </div>
@@ -692,3 +692,4 @@
     </script>
 </body>
 </html>
+
