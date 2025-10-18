@@ -9,7 +9,7 @@
     <!-- Chosen Palette: Stadium Night -->
     <!-- Application Structure Plan: The application is designed as a single-page dashboard with two primary, switchable views: "This Week's Predictions" and "Past Weeks' Results". This structure was chosen to provide users with a clear, focused experience. The default view immediately presents the most current and relevant information (this week's games) using a visually scannable card layout. Detailed game analysis is hidden by default within modals, which are triggered by a "View Analysis" button on each card. This prevents information overload and allows users to optionally drill down into specifics without leaving the main view. The secondary view for past results uses a similar card layout for consistency and is controlled by a simple dropdown, making historical exploration intuitive. This separation of current vs. past and summary vs. detail creates a logical user flow that prioritizes ease of navigation and quick information absorption. A hidden admin panel, accessible via a URL parameter, allows for easy data updates and week rollovers using Firestore as the backend. -->
     <!-- Visualization & Content Choices: 
-        - Report Info: Team matchups, predicted scores, and spreads. -> Goal: Inform/Compare -> Presentation: HTML/CSS Game Cards. -> Interaction: None. -> Justification: Cards are a standard, effective UI pattern for presenting discrete, comparable items. They allow for a clean, organized grid layout. -> Method: Tailwind CSS.
+        - Report Info: Team matchups, predicted scores, and spreads. -> Goal: Inform/Compare -> Presentation: HTML/CSS Game Cards with official team logos. -> Interaction: None. -> Justification: Cards are a standard, effective UI pattern for presenting discrete, comparable items. Using official logos enhances visual appeal and team recognition. -> Method: Tailwind CSS, IMG tags.
         - Report Info: Detailed game-by-game breakdown text. -> Goal: Inform (Detailed) -> Presentation: Text block inside a modal window. -> Interaction: Click "View Analysis" button to open, "Close" button to dismiss. -> Justification: Modals provide detailed context on-demand without disrupting the layout of the main page, focusing the user's attention. -> Method: Vanilla JS.
         - Report Info: All game predictions for the week. -> Goal: Organize/Explore -> Presentation: Interactive Navigation Tabs/Buttons ("This Week", "Past Weeks"). -> Interaction: Click to switch between the main content views. -> Justification: This is the core navigation for the SPA, allowing users to move between the two main content sections cleanly. -> Method: Vanilla JS.
         - Report Info: Historical game data (predicted vs. actual). -> Goal: Compare/Organize -> Presentation: Dropdown selector for week selection and dynamically rendered result cards. -> Interaction: Select a week from the dropdown to load its data. -> Justification: A dropdown is a space-efficient way to handle historical navigation with a potentially growing number of weeks. -> Method: Vanilla JS.
@@ -21,18 +21,6 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-        }
-        .team-logo {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.25rem;
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.5);
         }
         .modal, .admin-view {
             transition: opacity 0.25s ease;
@@ -49,7 +37,7 @@
             min-height: 400px;
         }
     </style>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 </head>
@@ -79,7 +67,7 @@
                 <button id="save-week-data-btn" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save Changes</button>
                 <button id="finalize-week-btn" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Finalize Current Week & Advance</button>
             </div>
-            <p class="text-center mt-4 text-xs text-yellow-400">Warning: Finalizing the week is irreversible and will create the next week's empty template.</p>
+             <p class="text-center mt-4 text-xs text-yellow-400">Warning: Finalizing the week is irreversible and will create the next week's empty template.</p>
             <p id="admin-status" class="text-center mt-2 text-sm"></p>
         </section>
 
@@ -91,7 +79,7 @@
             </div>
 
             <div id="summary-section" class="mb-12">
-                <div class="text-center mb-6">
+                 <div class="text-center mb-6">
                     <h3 id="scorecard-title" class="text-3xl font-bold text-white">Predictive Scorecard</h3>
                     <p class="text-gray-400 mt-2 max-w-2xl mx-auto">A quick overview of all projected matchups, spreads, and outcomes for the week.</p>
                 </div>
@@ -128,9 +116,9 @@
         </section>
 
         <section id="history-view" class="hidden">
-            <div class="text-center mb-8">
+             <div class="text-center mb-8">
                 <h2 class="text-4xl font-bold text-white">Past Weeks' Results</h2>
-                <p class="text-gray-400 mt-2 max-w-2xl mx-auto">Review the prediction accuracy from previous weeks. Select a week below to see the projected scores versus the actual final scores for each game.</p>
+                 <p class="text-gray-400 mt-2 max-w-2xl mx-auto">Review the prediction accuracy from previous weeks. Select a week below to see the projected scores versus the actual final scores for each game.</p>
             </div>
             <div class="flex justify-center mb-6">
                 <select id="week-selector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full max-w-xs p-2.5">
@@ -161,7 +149,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
             collection, 
@@ -174,20 +162,36 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const teamData = {
-            'Philadelphia Eagles': { logo: 'PHI', color: '#004C54' },
-            'New York Giants': { logo: 'NYG', color: '#0B2265' },
-            'Denver Broncos': { logo: 'DEN', color: '#FB4F14' },
-            'New York Jets': { logo: 'NYJ', color: '#003F2D' },
-            'Los Angeles Rams': { logo: 'LAR', color: '#003594' },
-            'Baltimore Ravens': { logo: 'BAL', color: '#241773' },
-            'Atlanta Falcons': { logo: 'ATL', color: '#A71930' },
-            'Buffalo Bills': { logo: 'BUF', color: '#00338D' },
-            'Washington Commanders': { logo: 'WAS', color: '#5A1414' },
-            'Chicago Bears': { logo: 'CHI', color: '#0B162A' },
-            'Kansas City Chiefs': { logo: 'KC', color: '#E31837' },
-            'Las Vegas Raiders': { logo: 'LV', color: '#000000' },
-            'Dallas Cowboys': { logo: 'DAL', color: '#003594' },
-            'Tampa Bay Buccaneers': { logo: 'TB', color: '#D50A0A' },
+            'Philadelphia Eagles': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/phi.png' },
+            'New York Giants': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png' },
+            'Denver Broncos': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/den.png' },
+            'New York Jets': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png' },
+            'Los Angeles Rams': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/lar.png' },
+            'Baltimore Ravens': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/bal.png' },
+            'Atlanta Falcons': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/atl.png' },
+            'Buffalo Bills': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/buf.png' },
+            'Washington Commanders': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png' },
+            'Chicago Bears': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/chi.png' },
+            'Kansas City Chiefs': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png' },
+            'Las Vegas Raiders': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/lv.png' },
+            'Dallas Cowboys': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/dal.png' },
+            'Tampa Bay Buccaneers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/tb.png' },
+            'Houston Texans': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/hou.png' },
+            'Green Bay Packers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/gb.png' },
+            'Indianapolis Colts': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/ind.png' },
+            'Jacksonville Jaguars': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/jax.png' },
+            'Miami Dolphins': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/mia.png' },
+            'Minnesota Vikings': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/min.png' },
+            'New England Patriots': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/ne.png' },
+            'Cleveland Browns': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/cle.png' },
+            'Pittsburgh Steelers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/pit.png' },
+            'Cincinnati Bengals': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/cin.png' },
+            'San Francisco 49ers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/sf.png' },
+            'Seattle Seahawks': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/sea.png' },
+            'Arizona Cardinals': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/ari.png' },
+            'Detroit Lions': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/det.png' },
+            'Carolina Panthers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/car.png' },
+            'Los Angeles Chargers': { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/lac.png' },
         };
         
         let db;
@@ -220,7 +224,7 @@
         const finalizeWeekBtn = document.getElementById('finalize-week-btn');
         const adminStatus = document.getElementById('admin-status');
 
-        const getTeamInfo = (name) => teamData[name] || { logo: name ? name.substring(0, 3).toUpperCase() : 'N/A', color: '#6B7280' };
+        const getTeamInfo = (name) => teamData[name] || { logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png' };
 
         const createGameCard = (game) => {
             const awayInfo = getTeamInfo(game.teams.away);
@@ -233,14 +237,14 @@
                     <p class="text-xs text-center text-gray-400 mb-3">${game.time} | Spread: ${game.spread}</p>
                     <div class="flex justify-between items-center text-center">
                         <div class="flex-1 flex flex-col items-center">
-                            <div class="team-logo" style="background-color: ${awayInfo.color};">${awayInfo.logo}</div>
+                            <img src="${awayInfo.logo}" alt="${game.teams.away} logo" class="h-12 w-12 object-contain mb-2">
                             <span class="font-bold mt-2 text-sm">${game.teams.away}</span>
                         </div>
                         <div class="flex-1 flex flex-col items-center">
                             <span class="text-4xl font-black text-gray-400">@</span>
                         </div>
                         <div class="flex-1 flex flex-col items-center">
-                            <div class="team-logo" style="background-color: ${homeInfo.color};">${homeInfo.logo}</div>
+                            <img src="${homeInfo.logo}" alt="${game.teams.home} logo" class="h-12 w-12 object-contain mb-2">
                             <span class="font-bold mt-2 text-sm">${game.teams.home}</span>
                         </div>
                     </div>
@@ -272,8 +276,8 @@
             return `
                 <div class="bg-gray-800 rounded-xl shadow-lg p-4 flex flex-col">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-semibold text-gray-300">${game.teams.away}</span>
-                        <span class="text-sm font-semibold text-gray-300">${game.teams.home}</span>
+                         <span class="text-sm font-semibold text-gray-300">${game.teams.away}</span>
+                         <span class="text-sm font-semibold text-gray-300">${game.teams.home}</span>
                     </div>
                     <div class="bg-gray-700 rounded p-2 mb-2">
                         <div class="flex justify-between items-center text-sm">
@@ -286,7 +290,7 @@
                         </div>
                     </div>
                     <div class="bg-gray-900 rounded p-2">
-                        <div class="flex justify-between items-center text-sm">
+                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400">Actual:</span>
                             <div>
                                 <span class="font-bold ${actualWinner === 'away' ? 'text-white' : ''}">${game.actual.away}</span>
@@ -504,21 +508,20 @@
                     console.error("Error finalizing week:", error);
                     adminStatus.textContent = `Error: ${error.message}`;
                 }
-                setTimeout(() => adminStatus.textContent = '', 5000);
+                 setTimeout(() => adminStatus.textContent = '', 5000);
             });
         };
 
         async function initializeAppWithFirebase() {
             try {
-                // CORRECTED: Using the specific firebaseConfig you provided.
                 const firebaseConfig = {
-                apiKey: "AIzaSyCwnT6_QfL4VV9fDds5XYTw1vi5hb9PpgY",
-                authDomain: "predictions-app-2c969.firebaseapp.com",
-                projectId: "predictions-app-2c969",
-                storageBucket: "predictions-app-2c969.firebasestorage.app",
-                messagingSenderId: "668969527921",
-                appId: "1:668969527921:web:6ade6334bb67d03b57c9d0",
-                measurementId: "G-YMDTQSY8GS"
+                  apiKey: "AIzaSyCwnT6_QfL4VV9fDds5XYTw1vi5hb9PpgY",
+                  authDomain: "predictions-app-2c969.firebaseapp.com",
+                  projectId: "predictions-app-2c969",
+                  storageBucket: "predictions-app-2c969.firebasestorage.app",
+                  messagingSenderId: "668969527921",
+                  appId: "1:668969527921:web:6ade6334bb67d03b57c9d0",
+                  measurementId: "G-YMDTQSY8GS"
                 };
                 
                 const app = initializeApp(firebaseConfig);
@@ -553,7 +556,7 @@
 
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
-                document.getElementById('predictions-view').innerHTML = `<div class="text-center p-8 bg-red-900/50 border border-red-700 rounded-lg"><h3 class="font-bold text-red-300">Failed to Connect to Data Service</h3><p class="text-red-400 mt-2 text-sm">This is likely due to a misconfiguration of the Firebase project. Please ensure your project is set up correctly and the security rules are published as per the instructions.</p></div>`;
+                document.getElementById('predictions-view').innerHTML = `<div class="text-center p-8 bg-red-900/50 border border-red-700 rounded-lg"><h3 class="font-bold text-red-300">Failed to Connect to Data Service</h3><p class="text-red-400 mt-2 text-sm">Please ensure your Firebase project is set up correctly, Authentication is enabled, and the security rules are published as per the instructions.</p></div>`;
             }
         }
         
