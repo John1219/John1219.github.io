@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Week 8 Predictions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Dark Mode with Emerald Green Accent -->
+    <!-- Application Structure Plan: Designed a 4-page SPA ('This Week', 'Prior Weeks', 'Methodology', 'Data Entry') navigated by a header. 'This Week' is the default, showing a grid of 'Game Cards' (from the report's Scorecard table). Clicking a card drills down to a 'Game Detail' view, which uses tabs to organize the 9-section analysis. This card-to-detail-with-tabs structure is more intuitive and less overwhelming than the report's linear layout. 'Prior Weeks' and 'Data Entry' pages are included to directly address user requests for future-proofing and database integration, making the app a complete workflow tool, not just a static viewer. -->
+    <!-- Visualization & Content Choices: 1. Report Scorecard (Table 1) -> Goal: Inform/Compare -> Viz: Responsive grid of 'Game Cards' (HTML/Tailwind) -> Interaction: Click 'View Analysis' button -> Justification: More engaging and scannable than a table. 2. Confidence Rating -> Goal: Inform -> Viz: Unicode '🏈' characters (e.g., 🏈🏈🏈🏈◻️) -> Interaction: None -> Justification: Visual, thematic, and avoids images/SVG. 3. Statistical Deep Dive (Text) -> Goal: Compare -> Viz: Horizontal Bar Chart (Chart.js/Canvas) -> Interaction: Dynamically generated on 'Stats' tab click -> Justification: Far more efficient for comparing team stats than text. 4. 9-Section Analysis -> Goal: Organize/Inform -> Viz: Tabbed interface (HTML/Tailwind/JS) -> Interaction: Click tabs to show/hide content -> Justification: Prevents information overload on the detail screen. 5. Data Entry Request -> Goal: Input -> Viz: HTML Form -> Interaction: 'Submit' button (placeholder) -> Justification: Directly addresses user's data workflow needs. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate-900 Dark Background */
+            color: #f8fafc; /* Slate-50 Text */
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        .nav-btn.active {
+            background-color: #10b981; /* Emerald-500 Accent */
+            color: #0f172a; /* Dark text for contrast */
+        }
+        .detail-tab.active {
+            border-color: #10b981;
+            color: #10b981;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; 
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        /* Style for dark mode input fields */
+        input[type="text"], textarea, select {
+            background-color: #1e293b; /* Slate-800 for inputs */
+            color: #f8fafc;
+            border-color: #334155; /* Slate-700 border */
+        }
+        input[type="text"]:focus, textarea:focus, select:focus {
+            border-color: #10b981;
+            ring-color: #10b981;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-50">
+
+    <header class="bg-slate-800 shadow-xl sticky top-0 z-50 border-b border-emerald-500">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0 flex items-center">
+                    <span class="text-2xl font-bold text-emerald-500">NFL Predictive Analysis</span>
+                </div>
+                <div class="hidden sm:block sm:ml-6">
+                    <div class="flex space-x-4">
+                        <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors active" data-page="gamesPage">This Week's Games</button>
+                        <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors" data-page="priorWeeksPage">Prior Weeks</button>
+                        <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors" data-page="methodologyPage">Methodology</button>
+                        <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors" data-page="dataEntryPage">Data Entry</button>
+                    </div>
+                </div>
+                <div class="sm:hidden">
+                    <select id="mobileNav" class="block w-full rounded-md border-slate-700 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 bg-slate-800 text-slate-50">
+                        <option value="gamesPage">This Week's Games</option>
+                        <option value="priorWeeksPage">Prior Weeks</option>
+                        <option value="methodologyPage">Methodology</option>
+                        <option value="dataEntryPage">Data Entry</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <div id="gamesPage" class="page-content">
+            <h1 class="text-3xl font-bold text-slate-50 mb-6">Week 8 Predictive Scorecard</h1>
+            <div id="gameDetail" class="hidden bg-slate-800 rounded-xl shadow-2xl p-6 mb-6">
+                <button id="backButton" class="mb-4 text-sm font-medium text-emerald-500 hover:text-emerald-300 transition-colors">&larr; Back to Scorecard</button>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                    <div>
+                        <h2 id="detailGameTitle" class="text-3xl font-bold text-slate-50"></h2>
+                        <p id="detailGameTime" class="text-md text-slate-400"></p>
+                    </div>
+                    <div class="mt-4 md:mt-0 md:text-right">
+                        <p class="text-lg font-medium text-slate-400">Predicted Score</p>
+                        <p id="detailPredictedScore" class="text-3xl font-bold text-emerald-500"></p>
+                    </div>
+                </div>
+
+                <div class="border-b border-slate-700 mb-4">
+                    <nav class_="-mb-px flex space-x-6" aria-label="Tabs">
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500 active" data-tab="summary">Summary</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="stats">Stat Comparison</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="scheme">Scheme Analysis</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="players">Key Players</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="betting">Betting Market</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="injuries">Injury Report</button>
+                    </nav>
+                </div>
+
+                <div id="detailTabContent" class="prose max-w-none prose-invert text-slate-50">
+                </div>
+            </div>
+
+            <div id="gamesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        </div>
+
+        <div id="priorWeeksPage" class="page-content hidden">
+            <div class="bg-slate-800 rounded-xl shadow-2xl p-6">
+                <h1 class="text-3xl font-bold text-slate-50 mb-4">Prior Weeks Analysis</h1>
+                <p class="text-slate-400 mb-4">This section will allow you to browse and analyze predictions from previous weeks once the application is connected to a database.</p>
+                <div class="max-w-xs">
+                    <label for="week-select" class="block text-sm font-medium text-slate-50">Select a Week:</label>
+                    <select id="week-select" name="week" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-700 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md bg-slate-700" disabled>
+                        <option>Week 7 (Archive)</option>
+                        <option>Week 6 (Archive)</option>
+                        <option>Week 5 (Archive)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="methodologyPage" class="page-content hidden">
+            <div class="bg-slate-800 rounded-xl shadow-2xl p-6 prose max-w-none prose-invert text-slate-50">
+                <h1 class="text-3xl font-bold text-slate-50 mb-4">Model Methodology</h1>
+                <p>This report presents predictive analysis and final score projections for the 2025 NFL regular season. The forecasts are generated by a comprehensive quantitative and qualitative model that integrates a wide array of data points. The model is built on a foundation of advanced statistical metrics, situational factors, and in-depth scheme analysis. By synthesizing these diverse inputs, the model aims to provide a nuanced and accurate prediction for each game, moving beyond simple statistical comparisons to capture the complex dynamics of an NFL matchup.</p>
+                
+                <h2 class="text-emerald-500">Core Components</h2>
+                <ul>
+                    <li><strong>Statistical Deep Dive:</strong> Utilizes advanced metrics such as DVOA (Defense-adjusted Value Over Average), EPA (Expected Points Added) per play, success rates, and weighted performance indicators that emphasize recent form.</li>
+                    <li><strong>Scheme & Matchup Analysis:</strong> Qualitatively assesses coaching tendencies, offensive vs. defensive schemes, and specific one-on-one matchups in key areas (e.g., pass rush vs. offensive line, top receiver vs. secondary).</li>
+                    <li><strong>Betting Market Analysis:</strong> Incorporates data from the betting markets (spreads, totals, line movements) as a "wisdom of the crowds" indicator to refine projections and identify market discrepancies.</li>
+                    <li><strong>Situational Factors:</strong> Accounts for non-statistical variables such as rest (bye weeks, short weeks), travel, home-field advantage, weather, and specific motivational angles.</li>
+                    <li><strong>Injury & Personnel Report:</strong> Integrates the latest injury news and personnel changes, adjusting player and unit grades based on the projected status of key contributors.</li>
+                </ul>
+
+                <h2 class="mt-6 text-red-500">Disclaimer</h2>
+                <p>The information and predictions contained within this application are for entertainment and informational purposes only. All data is compiled from publicly available sources and is subject to change. While every effort is made to ensure the accuracy of the information, no guarantee is provided. This analysis does not constitute betting advice. All forms of gambling carry risk, and users should exercise caution and discretion. The creators of this application are not responsible for any financial losses incurred as a result of using this information.</p>
+            </div>
+        </div>
+        
+        <div id="dataEntryPage" class="page-content hidden">
+            <div class="bg-slate-800 rounded-xl shadow-2xl p-6">
+                <h1 class="text-3xl font-bold text-slate-50 mb-4">Data Entry Portal</h1>
+                <p class="text-slate-400 mb-6">Use this form to input the data from a new weekly report. When connected to a Firebase database, clicking "Submit" would save this report, making it instantly available on the "This Week's Games" and "Prior Weeks" pages.</p>
+                
+                <form id="dataEntryForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <input type="text" placeholder="Week Number (e.g., 9)" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" placeholder="Game ID (e.g., 'buf-mia')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" placeholder="Away Team (e.g., 'Buffalo Bills')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" placeholder="Home Team (e.g., 'Miami Dolphins')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" placeholder="Game Time (e.g., '1:00 PM (Sun)')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" placeholder="Current Spread (e.g., 'MIA -2.5')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" placeholder="Predicted Score (e.g., 'MIA 27 - BUF 24')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" placeholder="Prediction vs. Spread (e.g., 'Miami Dolphins -2.5')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <select class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <option value="0" disabled selected>Confidence Rating (1-5)</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Final Score Projection (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Statistical Deep Dive (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Scheme & Matchup Analysis (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Key Player Spotlight (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Betting Market Analysis (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Situational Factors (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Injury & Personnel Report (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Final Prediction Summary (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Recommendation (Text)"></textarea>
+
+                    <div class="text-right">
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-slate-900 bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500" disabled>
+                            Submit to Database (Disabled)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const allGameData = {
+            "min-lac": {
+                id: "min-lac",
+                away: "Minnesota Vikings",
+                home: "Los Angeles Chargers",
+                spread: "LAC -3.5",
+                predictedScore: "MIN 23 - LAC 20",
+                pick: "Minnesota Vikings +3.5",
+                confidence: 4,
+                time: "8:15 PM (Thu)",
+                analysis: {
+                    projection: "The model projects a final score of Minnesota 23, Los Angeles 20. This outcome favors the Vikings covering the +3.5-point spread and suggests value on the UNDER 45.5 points.",
+                    stats: "MIN: 24.5 PPG (12th), 350.2 YPG (14th), 21.8 PPG Allowed (18th), 330.1 YPG Allowed (15th). LAC: 22.1 PPG (19th), 340.5 YPG (18th), 25.0 PPG Allowed (25th), 365.2 YPG Allowed (26th). Minnesota's offense has been more efficient (6th in EPA/play), while the Chargers' defense has struggled, ranking 28th in defensive DVOA.",
+                    scheme: "Minnesota's zone-heavy coverage scheme will test the Chargers' QB. The Vikings' diverse run game will challenge a soft Chargers run defense (30th in rush DVOA).",
+                    players: "MIN WR Justin Jefferson vs. LAC CB Asante Samuel Jr. will be a key matchup. LAC QB Justin Herbert's performance against the Vikings' aggressive blitz packages will be critical.",
+                    betting: "The line opened at LAC -4.5 and has been bet down to -3.5, indicating early money on the Vikings. The public is split 55/45 on the Chargers.",
+                    situational: "Short week for both teams after playing on Sunday. The Vikings are 2-1 ATS on the road this season.",
+                    injuries: "MIN: LT Christian Darrisaw (Knee) is questionable. His absence would be a significant blow. LAC: C Corey Linsley (Groin) is questionable. WR Mike Williams (Back) is probable.",
+                    summary: "This is a classic matchup of an efficient, well-coached Vikings team against a talented but underperforming Chargers squad. The Vikings' balanced offense and solid defense give them the edge.",
+                    recommendation: "Minnesota Vikings +3.5"
+                },
+                statsData: {
+                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
+                    awayStats: [24.5, 350.2, 21.8, 330.1],
+                    homeStats: [22.1, 340.5, 25.0, 365.2],
+                    awayColor: 'rgba(78, 22, 112, 0.8)',
+                    homeColor: 'rgba(0, 128, 198, 0.8)'
+                }
+            },
+            "nyj-cin": {
+                id: "nyj-cin",
+                away: "New York Jets",
+                home: "Cincinnati Bengals",
+                spread: "CIN -6.5",
+                predictedScore: "CIN 24 - NYJ 20",
+                pick: "New York Jets +6.5",
+                confidence: 3,
+                time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a final score of Cincinnati 24, New York 20. This indicates the Jets are likely to cover the +6.5-point spread in a competitive game.",
+                    stats: "NYJ: 18.0 PPG (28th), 295.5 YPG (30th), 19.5 PPG Allowed (8th), 310.2 YPG Allowed (5th). CIN: 26.2 PPG (8th), 360.8 YPG (10th), 22.0 PPG Allowed (19th), 345.0 YPG Allowed (20th). This is a stark contrast between the Jets' elite defense and struggling offense versus the Bengals' high-powered offense and average defense.",
+                    scheme: "The Jets' defensive line (led by Quinnen Williams) against the Bengals' offensive line is the key schematic battle. If the Jets can generate pressure without blitzing, they can disrupt the Bengals' passing attack. Cincinnati will likely use a quick-passing game to neutralize the pass rush.",
+                    players: "NYJ CB Sauce Gardner vs. CIN WR Ja'Marr Chase is a premier matchup. CIN QB Joe Burrow's ability to handle the Jets' pressure will determine the game's outcome.",
+                    betting: "The line has held steady at CIN -6.5. The public is heavily backing the Bengals (70% of spread bets).",
+                    situational: "The Jets are coming off a bye week, giving them a significant rest and preparation advantage. The Bengals are playing their third home game in four weeks.",
+                    injuries: "NYJ: OL Alijah Vera-Tucker is out (Achilles), a major loss. CIN: WR Tee Higgins (Ribs) is questionable but expected to play.",
+                    summary: "The Jets' elite defense and rest advantage should keep this game close, even against the Bengals' explosive offense. The Jets' offense, however, will struggle to score. This points to a close, lower-scoring affair.",
+                    recommendation: "New York Jets +6.5"
+                },
+                statsData: {
+                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
+                    awayStats: [18.0, 295.5, 19.5, 310.2],
+                    homeStats: [26.2, 360.8, 22.0, 345.0],
+                    awayColor: 'rgba(18, 52, 40, 0.8)',
+                    homeColor: 'rgba(251, 79, 20, 0.8)'
+                }
+            },
+            "chi-bal": {
+                id: "chi-bal",
+                away: "Chicago Bears",
+                home: "Baltimore Ravens",
+                spread: "BAL -6.5",
+                predictedScore: "BAL 30 - CHI 20",
+                pick: "Baltimore Ravens -6.5",
+                confidence: 3,
+                time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a final score of Baltimore 30, Chicago 20. This suggests the Ravens will win and cover the -6.5-point spread.",
+                    stats: "CHI: 22.0 PPG (20th), 330.1 YPG (22nd), 26.5 PPG Allowed (29th), 370.0 YPG Allowed (28th). BAL: 28.3 PPG (5th), 380.5 YPG (6th), 18.0 PPG Allowed (4th), 305.5 YPG Allowed (4th). Baltimore holds a significant statistical advantage on both sides of the ball.",
+                    scheme: "The Ravens' multifaceted run game (1st in rush YPG) will attack a weak Bears run defense (27th in rush YPG allowed). The Bears' offense will struggle to move the ball against a complex and aggressive Ravens defense that leads the NFL in sacks.",
+                    players: "BAL QB Lamar Jackson is the clear focal point. CHI QB Caleb Williams will be under constant pressure from the Ravens' front seven.",
+                    betting: "The line opened at -6 and has moved to -6.5, indicating money is coming in on the Ravens. The total has climbed from 44.0 to 45.5.",
+                    situational: "The Bears are on the road for the second consecutive week. The Ravens are playing at home after a dominant divisional win.",
+                    injuries: "CHI: RB D'Andre Swift (Ankle) is questionable. BAL: S Kyle Hamilton (Knee) is questionable but expected to play.",
+                    summary: "This is a significant mismatch. The Ravens are superior in nearly every facet of the game, from coaching and scheme to high-end talent and statistical performance. The Bears' struggling defense will not be able to contain Lamar Jackson and the Ravens' offense.",
+                    recommendation: "Baltimore Ravens -6.5"
+                },
+                statsData: {
+                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
+                    awayStats: [22.0, 330.1, 26.5, 370.0],
+                    homeStats: [28.3, 380.5, 18.0, 305.5],
+                    awayColor: 'rgba(0, 22, 65, 0.8)',
+                    homeColor: 'rgba(26, 25, 95, 0.8)'
+                }
+            },
+            "mia-atl": {
+                id: "mia-atl",
+                away: "Miami Dolphins",
+                home: "Atlanta Falcons",
+                spread: "ATL -7.5",
+                predictedScore: "ATL 27 - MIA 23",
+                pick: "Miami Dolphins +7.5",
+                confidence: 2,
+                time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a final score of Atlanta 27, Miami 23. This outcome indicates a win for the Falcons, but they fail to cover the large -7.5-point spread.",
+                    stats: "MIA: 31.5 PPG (1st), 420.1 YPG (1st), 24.0 PPG Allowed (23rd), 350.5 YPG Allowed (22nd). ATL: 23.0 PPG (16th), 345.0 YPG (17th), 20.5 PPG Allowed (12th), 320.0 YPG Allowed (10th). This highlights a clash between Miami's top-ranked offense and Atlanta's respectable defense.",
+                    scheme: "The Falcons' offense, which relies heavily on play-action and the run game, will test the discipline of the Dolphins' defense. Miami's speed-based offense will be a major challenge for the Falcons' secondary.",
+                    players: "MIA WR Tyreek Hill vs. ATL CB A.J. Terrell is the premier matchup. ATL QB Kirk Cousins' efficiency against the Dolphins' blitz-heavy scheme will be key.",
+                    betting: "This line is surprisingly large, opening at -7 and moving to -7.5. This suggests strong market respect for the Falcons at home or a potential injury concern for Miami.",
+                    situational: "Miami is playing its first game after a bye week. Atlanta is playing at home after a tough road loss.",
+                    injuries: "MIA: QB Tua Tagovailoa (Shoulder) is listed as questionable, which is the primary reason for this large spread. RB De'Von Achane (Knee) is also questionable.",
+                    summary: "This prediction hinges on the health of Tua Tagovailoa. Assuming he plays, the Dolphins' offense is explosive enough to keep this game well within the 7.5-point spread, even against a solid Falcons team.",
+                    recommendation: "Miami Dolphins +7.5"
+                },
+                statsData: {
+                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
+                    awayStats: [31.5, 420.1, 24.0, 350.5],
+                    homeStats: [23.0, 345.0, 20.5, 320.0],
+                    awayColor: 'rgba(0, 142, 151, 0.8)',
+                    homeColor: 'rgba(167, 25, 48, 0.8)'
+                }
+            }
+        };
+
+        let currentGameId = null;
+        let myStatsChart = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        function initApp() {
+            renderScorecard();
+            attachNavListeners();
+        }
+
+        function getConfidenceRating(rating) {
+            const filled = '<span class="text-emerald-500">🏈</span>';
+            const empty = '<span class="opacity-30">🏈</span>';
+            return filled.repeat(rating) + empty.repeat(5 - rating);
+        }
+
+        function renderScorecard() {
+            const grid = document.getElementById('gamesGrid');
+            grid.innerHTML = ''; 
+            for (const gameId in allGameData) {
+                const game = allGameData[gameId];
+                const card = `
+                    <div class="bg-slate-800 rounded-xl shadow-2xl p-6 transition-all duration-300 hover:shadow-emerald-500/20 flex flex-col justify-between border-t-4 border-emerald-500">
+                        <div>
+                            <p class="text-sm text-slate-400 mb-2">${game.time}</p>
+                            <h3 class="text-xl font-bold text-slate-50 mb-1">${game.away}</h3>
+                            <h3 class="text-xl font-bold text-slate-50 mb-4">@ ${game.home}</h3>
+                            
+                            <div class="mb-4">
+                                <p class="text-sm font-medium text-slate-400">Predicted Score</p>
+                                <p class="text-2xl font-bold text-emerald-500">${game.predictedScore}</p>
+                            </div>
+                            <div class="flex justify-between items-center mb-4 text-sm">
+                                <div>
+                                    <p class="font-medium text-slate-400">Spread</p>
+                                    <p class="font-semibold text-slate-50">${game.spread}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-medium text-slate-400">Pick</p>
+                                    <p class="font-semibold text-slate-50">${game.pick}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-400 mb-1">Confidence</p>
+                                <div class="text-xl" aria-label="Confidence: ${game.confidence} out of 5">
+                                    ${getConfidenceRating(game.confidence)}
+                                </div>
+                            </div>
+                        </div>
+                        <button class="view-analysis-btn mt-6 w-full bg-emerald-500 text-slate-900 font-bold py-2 px-4 rounded-lg hover:bg-emerald-400 transition-colors shadow-lg hover:shadow-emerald-400/40" data-gameid="${game.id}">
+                            View Analysis
+                        </button>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            }
+
+            document.querySelectorAll('.view-analysis-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showGameDetail(btn.dataset.gameid);
+                });
+            });
+        }
+
+        function showGameDetail(gameId) {
+            currentGameId = gameId;
+            const game = allGameData[gameId];
+
+            document.getElementById('gamesGrid').classList.add('hidden');
+            document.getElementById('gameDetail').classList.remove('hidden');
+            
+            window.scrollTo(0, 0);
+
+            document.getElementById('detailGameTitle').textContent = `${game.away} @ ${game.home}`;
+            document.getElementById('detailGameTime').textContent = game.time;
+            document.getElementById('detailPredictedScore').textContent = game.predictedScore;
+            
+            document.querySelectorAll('.detail-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector('.detail-tab[data-tab="summary"]').classList.add('active');
+
+            showDetailTab(gameId, 'summary');
+
+            document.querySelectorAll('.detail-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    showDetailTab(gameId, tab.dataset.tab);
+                });
+            });
+        }
+        
+        function showDetailTab(gameId, tabName) {
+            const game = allGameData[gameId];
+            const contentEl = document.getElementById('detailTabContent');
+            
+            if (myStatsChart) {
+                myStatsChart.destroy();
+                myStatsChart = null;
+            }
+
+            switch(tabName) {
+                case 'summary':
+                    contentEl.innerHTML = `
+                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Final Score Projection</h3>
+                        <p class="text-slate-300">${game.analysis.projection}</p>
+                        <h3 class="text-xl font-semibold text-slate-50 mt-4">Final Prediction Summary</h3>
+                        <p class="text-slate-300">${game.analysis.summary}</p>
+                        <h3 class="text-2xl font-bold text-emerald-500 mt-6">Recommendation: ${game.analysis.recommendation}</h3>
+                    `;
+                    break;
+                case 'stats':
+                    contentEl.innerHTML = `
+                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Statistical Deep Dive</h3>
+                        <p class="text-slate-300">${game.analysis.stats}</p>
+                        <div class="chart-container mt-6 bg-slate-700 p-4 rounded-lg">
+                            <canvas id="statsChart"></canvas>
+                        </div>
+                    `;
+                    renderStatsChart(gameId);
+                    break;
+                case 'scheme':
+                    contentEl.innerHTML = `
+                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Scheme & Matchup Analysis</h3>
+                        <p class="text-slate-300">${game.analysis.scheme}</p>
+                    `;
+                    break;
+                case 'players':
+                    contentEl.innerHTML = `
+                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Key Player Spotlight</h3>
+                        <p class="text-slate-300">${game.analysis.players}</p>
+                    `;
+                    break;
+                case 'betting':
+                    contentEl.innerHTML = `
+                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Betting Market Analysis</h3>
+                        <p class="text-slate-300">${game.analysis.betting}</p>
+                    `;
+                    break;
+                case 'injuries':
+                    contentEl.innerHTML = `
+                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Injury & Personnel Report</h3>
+                        <p class="text-slate-300">${game.analysis.injuries}</p>
+                        <h3 class="text-xl font-semibold text-slate-50 mt-4">Situational Factors</h3>
+                        <p class="text-slate-300">${game.analysis.situational}</p>
+                    `;
+                    break;
+            }
+        }
+
+        function renderStatsChart(gameId) {
+            const game = allGameData[gameId];
+            const stats = game.statsData;
+            const ctx = document.getElementById('statsChart').getContext('2d');
+
+            if (myStatsChart) {
+                myStatsChart.destroy();
+            }
+
+            // Chart.js dark mode configuration
+            Chart.defaults.color = '#e2e8f0'; // Slate-200 for labels
+            Chart.defaults.borderColor = '#475569'; // Slate-600 for grid lines
+
+            myStatsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stats.labels,
+                    datasets: [
+                        {
+                            label: game.away,
+                            data: stats.awayStats,
+                            backgroundColor: stats.awayColor,
+                            borderColor: stats.awayColor.replace('0.8', '1'),
+                            borderWidth: 1
+                        },
+                        {
+                            label: game.home,
+                            data: stats.homeStats,
+                            backgroundColor: stats.homeColor,
+                            borderColor: stats.homeColor.replace('0.8', '1'),
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Key Stat Comparison',
+                            font: { size: 16 },
+                            color: '#f8fafc' // Slate-50 for title
+                        },
+                        legend: {
+                            labels: {
+                                color: '#f8fafc' // Slate-50 for legend text
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: '#334155' },
+                            ticks: { color: '#e2e8f0' }
+                        },
+                        y: {
+                            grid: { color: '#334155' },
+                            ticks: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.page === pageId) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            document.getElementById('mobileNav').value = pageId;
+
+            if (pageId === 'gamesPage') {
+                document.getElementById('gameDetail').classList.add('hidden');
+                document.getElementById('gamesGrid').classList.remove('hidden');
+                if (myStatsChart) {
+                    myStatsChart.destroy();
+                    myStatsChart = null;
+                }
+            }
+        }
+
+        function attachNavListeners() {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    showPage(btn.dataset.page);
+                });
+            });
+            
+            document.getElementById('mobileNav').addEventListener('change', (e) => {
+                showPage(e.target.value);
+            });
+
+            document.getElementById('backButton').addEventListener('click', () => {
+                document.getElementById('gameDetail').classList.add('hidden');
+                document.getElementById('gamesGrid').classList.remove('hidden');
+                if (myStatsChart) {
+                    myStatsChart.destroy();
+                    myStatsChart = null;
+                }
+            });
+
+            document.getElementById('dataEntryForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+            });
+        }
+
+    </script>
+</body>
+</html>
