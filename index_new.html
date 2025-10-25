@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFL Week 8 Predictions</title>
+    <title>NFL Week 8 Predictive Analysis Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Dark Mode with Emerald Green Accent -->
-    <!-- Application Structure Plan: Designed a 4-page SPA ('This Week', 'Prior Weeks', 'Methodology', 'Data Entry') navigated by a header. 'This Week' is the default, showing a grid of 'Game Cards' (from the report's Scorecard table). Clicking a card drills down to a 'Game Detail' view, which uses tabs to organize the 9-section analysis. This card-to-detail-with-tabs structure is more intuitive and less overwhelming than the report's linear layout. 'Prior Weeks' and 'Data Entry' pages are included to directly address user requests for future-proofing and database integration, making the app a complete workflow tool, not just a static viewer. -->
-    <!-- Visualization & Content Choices: 1. Report Scorecard (Table 1) -> Goal: Inform/Compare -> Viz: Responsive grid of 'Game Cards' (HTML/Tailwind) -> Interaction: Click 'View Analysis' button -> Justification: More engaging and scannable than a table. 2. Confidence Rating -> Goal: Inform -> Viz: Unicode '🏈' characters (e.g., 🏈🏈🏈🏈◻️) -> Interaction: None -> Justification: Visual, thematic, and avoids images/SVG. 3. Statistical Deep Dive (Text) -> Goal: Compare -> Viz: Horizontal Bar Chart (Chart.js/Canvas) -> Interaction: Dynamically generated on 'Stats' tab click -> Justification: Far more efficient for comparing team stats than text. 4. 9-Section Analysis -> Goal: Organize/Inform -> Viz: Tabbed interface (HTML/Tailwind/JS) -> Interaction: Click tabs to show/hide content -> Justification: Prevents information overload on the detail screen. 5. Data Entry Request -> Goal: Input -> Viz: HTML Form -> Interaction: 'Submit' button (placeholder) -> Justification: Directly addresses user's data workflow needs. -->
+    <!-- Application Structure Plan: The main 'gamesPage' now leads with a 'Top Performers' section (Part III) using position tabs for high visual impact, followed by the 'Weekly Scorecard' grid (Table 1). The 'Game Detail' view uses tabs to organize the deep analytical dossier (Part II) into digestible sections (Summary, Stats/Chart, Scheme, Betting, Injuries), translating the linear report structure into an efficient dashboard-to-detail flow. The Prior Weeks and Data Entry sections remain for workflow support. -->
+    <!-- Visualization & Content Choices: 1. Top Performers -> Goal: Identify key value players -> Viz: Interactive tabbed list (HTML/Tailwind) with key stats -> Interaction: Click position buttons to filter list. 2. Weekly Scorecard -> Goal: Scannable overview -> Viz: Responsive grid of 'Game Cards' (HTML/Tailwind) -> Interaction: Drill down to Game Detail. 3. Statistical Deep Dive -> Goal: Compare efficiency -> Viz: Horizontal Bar Chart (Chart.js/Canvas) comparing DVOA and EPA/Play metrics -> Interaction: Dynamic chart generation on tab click, using advanced metrics for a "tech-focused" feel. 4. Analysis Dossier -> Goal: Organize complex text -> Viz: Tabbed interface (HTML/JS) -> Justification: Breaks the detailed nine-part analysis into logical, consumable chunks. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
@@ -26,6 +26,11 @@
             color: #10b981;
             font-weight: 600;
         }
+        .top-performer-btn.active {
+            background-color: #10b981;
+            color: #0f172a;
+            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.4);
+        }
         .chart-container {
             position: relative;
             width: 100%;
@@ -40,11 +45,10 @@
                 height: 350px;
             }
         }
-        /* Style for dark mode input fields */
         input[type="text"], textarea, select {
-            background-color: #1e293b; /* Slate-800 for inputs */
+            background-color: #1e293b; 
             color: #f8fafc;
-            border-color: #334155; /* Slate-700 border */
+            border-color: #334155; 
         }
         input[type="text"]:focus, textarea:focus, select:focus {
             border-color: #10b981;
@@ -62,7 +66,7 @@
                 </div>
                 <div class="hidden sm:block sm:ml-6">
                     <div class="flex space-x-4">
-                        <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors active" data-page="gamesPage">This Week's Games</button>
+                        <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors active" data-page="gamesPage">Week 8 Dashboard</button>
                         <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors" data-page="priorWeeksPage">Prior Weeks</button>
                         <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors" data-page="methodologyPage">Methodology</button>
                         <button class="nav-btn py-2 px-3 rounded-md text-sm font-medium text-slate-50 hover:bg-slate-700 transition-colors" data-page="dataEntryPage">Data Entry</button>
@@ -70,7 +74,7 @@
                 </div>
                 <div class="sm:hidden">
                     <select id="mobileNav" class="block w-full rounded-md border-slate-700 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 bg-slate-800 text-slate-50">
-                        <option value="gamesPage">This Week's Games</option>
+                        <option value="gamesPage">Week 8 Dashboard</option>
                         <option value="priorWeeksPage">Prior Weeks</option>
                         <option value="methodologyPage">Methodology</option>
                         <option value="dataEntryPage">Data Entry</option>
@@ -83,10 +87,35 @@
     <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
 
         <div id="gamesPage" class="page-content">
-            <h1 class="text-3xl font-bold text-slate-50 mb-6">Week 8 Predictive Scorecard</h1>
+            <h1 class="text-3xl font-bold text-slate-50 mb-6">Week 8 Predictive Dashboard</h1>
+
+            <!-- New Top Performers Section -->
+            <div class="bg-slate-800 rounded-xl shadow-2xl p-6 mb-8 border-t-4 border-slate-700">
+                <h2 class="text-2xl font-bold text-emerald-500 mb-4">Top Projected Performers</h2>
+                <p class="text-slate-400 mb-4 text-sm">Identifies the highest-value players this week based on projected game scripts and favorable matchups from the model's simulations (Part III).</p>
+                
+                <div id="topPerformerTabs" class="flex flex-wrap gap-2 mb-4">
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors active" data-position="QB">QB</button>
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors" data-position="RB">RB</button>
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors" data-position="WR">WR</button>
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors" data-position="TE">TE</button>
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors" data-position="K">K</button>
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors" data-position="DL">DL</button>
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors" data-position="LB">LB</button>
+                    <button class="top-performer-btn py-2 px-4 rounded-full text-sm font-medium bg-slate-700 text-slate-50 hover:bg-slate-600 transition-colors" data-position="DB">DB</button>
+                </div>
+
+                <div id="topPerformersList" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <!-- Dynamic content inserted here -->
+                </div>
+            </div>
+            <!-- End Top Performers Section -->
+
+            <h2 class="text-xl font-bold text-slate-50 mb-4">Weekly Predictive Scorecard (13 Games)</h2>
+
             <div id="gameDetail" class="hidden bg-slate-800 rounded-xl shadow-2xl p-6 mb-6">
                 <button id="backButton" class="mb-4 text-sm font-medium text-emerald-500 hover:text-emerald-300 transition-colors">&larr; Back to Scorecard</button>
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-slate-700 pb-4">
                     <div>
                         <h2 id="detailGameTitle" class="text-3xl font-bold text-slate-50"></h2>
                         <p id="detailGameTime" class="text-md text-slate-400"></p>
@@ -98,13 +127,12 @@
                 </div>
 
                 <div class="border-b border-slate-700 mb-4">
-                    <nav class_="-mb-px flex space-x-6" aria-label="Tabs">
-                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500 active" data-tab="summary">Summary</button>
-                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="stats">Stat Comparison</button>
-                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="scheme">Scheme Analysis</button>
-                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="players">Key Players</button>
+                    <nav class_="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500 active" data-tab="summary">Summary & Rationale</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="stats">Stat Deep Dive & Chart</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="scheme">Scheme & Matchup</button>
                         <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="betting">Betting Market</button>
-                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="injuries">Injury Report</button>
+                        <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="injuries">Injuries & Situational</button>
                     </nav>
                 </div>
 
@@ -125,7 +153,7 @@
                     <select id="week-select" name="week" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-700 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md bg-slate-700" disabled>
                         <option>Week 7 (Archive)</option>
                         <option>Week 6 (Archive)</option>
-                        <option>Week 5 (Archive)</option>
+                        <option value="dataEntryPage">Import New Report</option>
                     </select>
                 </div>
             </div>
@@ -153,7 +181,7 @@
         <div id="dataEntryPage" class="page-content hidden">
             <div class="bg-slate-800 rounded-xl shadow-2xl p-6">
                 <h1 class="text-3xl font-bold text-slate-50 mb-4">Data Entry Portal</h1>
-                <p class="text-slate-400 mb-6">Use this form to input the data from a new weekly report. When connected to a Firebase database, clicking "Submit" would save this report, making it instantly available on the "This Week's Games" and "Prior Weeks" pages.</p>
+                <p class="text-slate-400 mb-6">This form represents the data structure needed for the predictive analysis model. When connected to a Firebase database, clicking "Submit" would save this report for future weeks.</p>
                 
                 <form id="dataEntryForm" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -167,23 +195,19 @@
                         <input type="text" placeholder="Prediction vs. Spread (e.g., 'Miami Dolphins -2.5')" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                         <select class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
                             <option value="0" disabled selected>Confidence Rating (1-5)</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
+                            <option value="1">1/5</option>
+                            <option value="2">2/5</option>
+                            <option value="3">3/5</option>
+                            <option value="4">4/5</option>
+                            <option value="5">5/5</option>
                         </select>
                     </div>
 
-                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Final Score Projection (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Final Score Projection & Rationale (Text)"></textarea>
                     <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Statistical Deep Dive (Text)"></textarea>
                     <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Scheme & Matchup Analysis (Text)"></textarea>
-                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Key Player Spotlight (Text)"></textarea>
                     <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Betting Market Analysis (Text)"></textarea>
-                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Situational Factors (Text)"></textarea>
-                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Injury & Personnel Report (Text)"></textarea>
-                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Final Prediction Summary (Text)"></textarea>
-                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Recommendation (Text)"></textarea>
+                    <textarea rows="3" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500" placeholder="Injury & Situational Factors (Text)"></textarea>
 
                     <div class="text-right">
                         <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-slate-900 bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500" disabled>
@@ -197,118 +221,297 @@
     </main>
 
     <script>
+        const topPerformersData = {
+            'QB': [
+                { name: "Patrick Mahomes", team: "KC", stat: "320 Passing Yards", statKey: "Passing" },
+                { name: "Josh Allen", team: "BUF", stat: "305 Passing Yards", statKey: "Passing" },
+                { name: "Bo Nix", team: "DEN", stat: "280 Passing Yards", statKey: "Passing" },
+                { name: "Daniel Jones", team: "IND", stat: "270 Passing Yards", statKey: "Passing" },
+                { name: "Justin Herbert", team: "LAC", stat: "265 Passing Yards", statKey: "Passing" },
+            ],
+            'RB': [
+                { name: "Jonathan Taylor", team: "IND", stat: "2 Rushing TDs", statKey: "Touchdowns" },
+                { name: "Bijan Robinson", team: "ATL", stat: "115 Rushing Yards", statKey: "Yards" },
+                { name: "Saquon Barkley", team: "PHI", stat: "105 Rushing Yards", statKey: "Yards" },
+                { name: "James Cook", team: "BUF", stat: "95 Rushing Yards", statKey: "Yards" },
+                { name: "Isiah Pacheco", team: "KC", stat: "1 Rushing TD", statKey: "Touchdowns" },
+            ],
+            'WR': [
+                { name: "Courtland Sutton", team: "DEN", stat: "1 Receiving TD", statKey: "Touchdowns" },
+                { name: "Michael Pittman Jr.", team: "IND", stat: "110 Receiving Yards", statKey: "Yards" },
+                { name: "Ja'Marr Chase", team: "CIN", stat: "100 Receiving Yards", statKey: "Yards" },
+                { name: "CeeDee Lamb", team: "DAL", stat: "8 Receptions", statKey: "Receptions" },
+                { name: "Stefon Diggs", team: "NE", stat: "90 Receiving Yards", statKey: "Yards" },
+            ],
+            'TE': [
+                { name: "Travis Kelce", team: "KC", stat: "85 Receiving Yards", statKey: "Yards" },
+                { name: "Jake Ferguson", team: "DAL", stat: "7 Receptions", statKey: "Receptions" },
+                { name: "Dalton Kincaid", team: "BUF", stat: "1 Receiving TD", statKey: "Touchdowns" },
+                { name: "Evan Engram", team: "DEN", stat: "70 Receiving Yards", statKey: "Yards" },
+                { name: "Tucker Kraft", team: "GB", stat: "6 Receptions", statKey: "Receptions" },
+            ],
+            'K': [
+                { name: "Wil Lutz", team: "DEN", stat: "11 Kicking Points", statKey: "Points" },
+                { name: "Jake Moody", team: "SF", stat: "10 Kicking Points", statKey: "Points" },
+                { name: "Harrison Butker", team: "KC", stat: "10 Kicking Points", statKey: "Points" },
+                { name: "Matt Gay", team: "IND", stat: "9 Kicking Points", statKey: "Points" },
+                { name: "Brandon Aubrey", team: "DAL", stat: "9 Kicking Points", statKey: "Points" },
+            ],
+            'DB': [
+                { name: "Trent McDuffie", team: "KC", stat: "2 Passes Defended", statKey: "PD" },
+                { name: "Pat Surtain II", team: "DEN", stat: "7 Tackles", statKey: "Tackles" },
+                { name: "Kyle Hamilton", team: "BAL", stat: "1 Interception", statKey: "INT" },
+                { name: "A.J. Terrell Jr.", team: "ATL", stat: "6 Tackles", statKey: "Tackles" },
+                { name: "Reed Blankenship", team: "PHI", stat: "1 Pass Defended", statKey: "PD" },
+            ],
+            'LB': [
+                { name: "Roquan Smith", team: "BAL", stat: "11 Tackles", statKey: "Tackles" },
+                { name: "Zaire Franklin", team: "IND", stat: "10 Tackles", statKey: "Tackles" },
+                { name: "Alex Singleton", team: "DEN", stat: "9 Tackles", statKey: "Tackles" },
+                { name: "Dre Greenlaw", team: "DEN", stat: "8 Tackles", statKey: "Tackles" },
+                { name: "Nick Bolton", team: "KC", stat: "8 Tackles", statKey: "Tackles" },
+            ],
+            'DL': [
+                { name: "Myles Garrett", team: "CLE", stat: "1.5 Sacks", statKey: "Sacks" },
+                { name: "Chris Jones", team: "KC", stat: "1 Sack", statKey: "Sacks" },
+                { name: "T.J. Watt", team: "PIT", stat: "1 Sack", statKey: "Sacks" },
+                { name: "Nick Bosa", team: "SF", stat: "1 Sack", statKey: "Sacks" },
+                { name: "Ed Oliver", team: "BUF", stat: "5 Tackles", statKey: "Tackles" },
+            ],
+        };
+
+        // All new data from the updated report (13 games)
         const allGameData = {
             "min-lac": {
-                id: "min-lac",
-                away: "Minnesota Vikings",
-                home: "Los Angeles Chargers",
-                spread: "LAC -3.5",
-                predictedScore: "MIN 23 - LAC 20",
-                pick: "Minnesota Vikings +3.5",
-                confidence: 4,
-                time: "8:15 PM (Thu)",
+                id: "min-lac", away: "Minnesota Vikings", home: "Los Angeles Chargers", spread: "LAC -3.5", predictedScore: "LAC 27 - MIN 20", pick: "Chargers -3.5", confidence: 3, time: "8:15 PM (Thu)",
                 analysis: {
-                    projection: "The model projects a final score of Minnesota 23, Los Angeles 20. This outcome favors the Vikings covering the +3.5-point spread and suggests value on the UNDER 45.5 points.",
-                    stats: "MIN: 24.5 PPG (12th), 350.2 YPG (14th), 21.8 PPG Allowed (18th), 330.1 YPG Allowed (15th). LAC: 22.1 PPG (19th), 340.5 YPG (18th), 25.0 PPG Allowed (25th), 365.2 YPG Allowed (26th). Minnesota's offense has been more efficient (6th in EPA/play), while the Chargers' defense has struggled, ranking 28th in defensive DVOA.",
-                    scheme: "Minnesota's zone-heavy coverage scheme will test the Chargers' QB. The Vikings' diverse run game will challenge a soft Chargers run defense (30th in rush DVOA).",
-                    players: "MIN WR Justin Jefferson vs. LAC CB Asante Samuel Jr. will be a key matchup. LAC QB Justin Herbert's performance against the Vikings' aggressive blitz packages will be critical.",
-                    betting: "The line opened at LAC -4.5 and has been bet down to -3.5, indicating early money on the Vikings. The public is split 55/45 on the Chargers.",
-                    situational: "Short week for both teams after playing on Sunday. The Vikings are 2-1 ATS on the road this season.",
-                    injuries: "MIN: LT Christian Darrisaw (Knee) is questionable. His absence would be a significant blow. LAC: C Corey Linsley (Groin) is questionable. WR Mike Williams (Back) is probable.",
-                    summary: "This is a classic matchup of an efficient, well-coached Vikings team against a talented but underperforming Chargers squad. The Vikings' balanced offense and solid defense give them the edge.",
-                    recommendation: "Minnesota Vikings +3.5"
+                    projection: "The model projects a Chargers victory and cover of the -3.5 spread. The primary driver is the **talent disparity at the quarterback position** and the home-field advantage on a short week. Justin Herbert's ability to generate explosive plays through the air gives the Chargers a higher ceiling than the Vikings. The model anticipates the Chargers will build an early lead and force the Vikings into a pass-heavy game script.",
+                    stats: "The Chargers' offense ranks 17th in DVOA, while their defense ranks 22nd. The Vikings' passing attack has been susceptible to high-volume attacks. The critical variable is **Justin Herbert's passer rating: 109.8 without pressure vs. just 68.7 with pressure.**",
+                    scheme: "This projects as a classic **passing game confrontation**. The Chargers' offense is designed to feature Herbert and attack a Vikings pass defense that has been susceptible to high-volume attacks. The key matchup will be the Chargers' offensive line against the Vikings' pass rush.",
+                    betting: "The market has the Chargers as 3.5-point home favorites, suggesting they are marginally better on a neutral field. The total is set at 44.5 points. The line has remained relatively stable, suggesting a consensus view.",
+                    injuries: "Both teams enter the game with **relatively clean injury reports** for their key players based on available information. This allows the analysis to focus primarily on on-field performance and scheme rather than significant injury adjustments. Situational factors: Short week for both teams, Chargers have home-field benefit.",
                 },
-                statsData: {
-                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
-                    awayStats: [24.5, 350.2, 21.8, 330.1],
-                    homeStats: [22.1, 340.5, 25.0, 365.2],
-                    awayColor: 'rgba(78, 22, 112, 0.8)',
-                    homeColor: 'rgba(0, 128, 198, 0.8)'
-                }
+                statsData: {labels: ['Overall DVOA', 'Offense DVOA', 'Defense DVOA', 'EPA/Play Allowed'], awayStats: [21, 19, 8, 0.05], homeStats: [14, 17, 22, -0.07], awayColor: 'rgba(78, 22, 112, 0.8)', homeColor: 'rgba(0, 128, 198, 0.8)'}
             },
             "nyj-cin": {
-                id: "nyj-cin",
-                away: "New York Jets",
-                home: "Cincinnati Bengals",
-                spread: "CIN -6.5",
-                predictedScore: "CIN 24 - NYJ 20",
-                pick: "New York Jets +6.5",
-                confidence: 3,
-                time: "1:00 PM (Sun)",
+                id: "nyj-cin", away: "New York Jets", home: "Cincinnati Bengals", spread: "CIN -6.5", predictedScore: "CIN 24 - NYJ 16", pick: "Jets +6.5", confidence: 2, time: "1:00 PM (Sun)",
                 analysis: {
-                    projection: "The model projects a final score of Cincinnati 24, New York 20. This indicates the Jets are likely to cover the +6.5-point spread in a competitive game.",
-                    stats: "NYJ: 18.0 PPG (28th), 295.5 YPG (30th), 19.5 PPG Allowed (8th), 310.2 YPG Allowed (5th). CIN: 26.2 PPG (8th), 360.8 YPG (10th), 22.0 PPG Allowed (19th), 345.0 YPG Allowed (20th). This is a stark contrast between the Jets' elite defense and struggling offense versus the Bengals' high-powered offense and average defense.",
-                    scheme: "The Jets' defensive line (led by Quinnen Williams) against the Bengals' offensive line is the key schematic battle. If the Jets can generate pressure without blitzing, they can disrupt the Bengals' passing attack. Cincinnati will likely use a quick-passing game to neutralize the pass rush.",
-                    players: "NYJ CB Sauce Gardner vs. CIN WR Ja'Marr Chase is a premier matchup. CIN QB Joe Burrow's ability to handle the Jets' pressure will determine the game's outcome.",
-                    betting: "The line has held steady at CIN -6.5. The public is heavily backing the Bengals (70% of spread bets).",
-                    situational: "The Jets are coming off a bye week, giving them a significant rest and preparation advantage. The Bengals are playing their third home game in four weeks.",
-                    injuries: "NYJ: OL Alijah Vera-Tucker is out (Achilles), a major loss. CIN: WR Tee Higgins (Ribs) is questionable but expected to play.",
-                    summary: "The Jets' elite defense and rest advantage should keep this game close, even against the Bengals' explosive offense. The Jets' offense, however, will struggle to score. This points to a close, lower-scoring affair.",
-                    recommendation: "New York Jets +6.5"
+                    projection: "The model projects a victory for the Cincinnati Bengals, but a cover for the New York Jets at **+6.5**. The Bengals' offense, led by a competent Joe Flacco and superior weapons, will be the best unit on the field and should control the game. However, the Bengals' defense is the **worst in the league by DVOA**, which should allow even the struggling Jets' offense to find some success and avoid a blowout.",
+                    stats: "The Jets rank 31st in power rankings, last in passing yards (143.4 YPG), and 29th in offensive DVOA. The Bengals defense is nearly as porous, ranking **32nd in Defensive DVOA** (least efficient defense in the league).",
+                    scheme: "The Bengals run a West Coast offense, which has proven effective even with backup QB Joe Flacco. The key matchup is the Bengals' passing attack against a Jets secondary that will be without All-Pro CB **Sauce Gardner**.",
+                    betting: "Cincinnati opened at -4.5 and the line has been bet up to -6.5, indicating market money backing the Bengals. The line movement suggests a lack of faith in the Jets' ability to remain competitive.",
+                    injuries: "The Jets are **critically injured**: CB Sauce Gardner (concussion) and WR Garrett Wilson (knee) are **ruled OUT**. This is a devastating blow. Situational factors: Bengals have home-field advantage. Jets' desperation at 0-7 is noted.",
                 },
-                statsData: {
-                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
-                    awayStats: [18.0, 295.5, 19.5, 310.2],
-                    homeStats: [26.2, 360.8, 22.0, 345.0],
-                    awayColor: 'rgba(18, 52, 40, 0.8)',
-                    homeColor: 'rgba(251, 79, 20, 0.8)'
-                }
+                statsData: {labels: ['Overall DVOA', 'Offense DVOA', 'Defense DVOA', 'EPA/Play Generated'], awayStats: [27, 29, 15, -0.15], homeStats: [26, 20, 32, -0.05], awayColor: 'rgba(18, 52, 40, 0.8)', homeColor: 'rgba(251, 79, 20, 0.8)'}
             },
             "chi-bal": {
-                id: "chi-bal",
-                away: "Chicago Bears",
-                home: "Baltimore Ravens",
-                spread: "BAL -6.5",
-                predictedScore: "BAL 30 - CHI 20",
-                pick: "Baltimore Ravens -6.5",
-                confidence: 3,
-                time: "1:00 PM (Sun)",
+                id: "chi-bal", away: "Chicago Bears", home: "Baltimore Ravens", spread: "BAL -6.5", predictedScore: "CHI 23 - BAL 17", pick: "Bears +6.5", confidence: 5, time: "1:00 PM (Sun)",
                 analysis: {
-                    projection: "The model projects a final score of Baltimore 30, Chicago 20. This suggests the Ravens will win and cover the -6.5-point spread.",
-                    stats: "CHI: 22.0 PPG (20th), 330.1 YPG (22nd), 26.5 PPG Allowed (29th), 370.0 YPG Allowed (28th). BAL: 28.3 PPG (5th), 380.5 YPG (6th), 18.0 PPG Allowed (4th), 305.5 YPG Allowed (4th). Baltimore holds a significant statistical advantage on both sides of the ball.",
-                    scheme: "The Ravens' multifaceted run game (1st in rush YPG) will attack a weak Bears run defense (27th in rush YPG allowed). The Bears' offense will struggle to move the ball against a complex and aggressive Ravens defense that leads the NFL in sacks.",
-                    players: "BAL QB Lamar Jackson is the clear focal point. CHI QB Caleb Williams will be under constant pressure from the Ravens' front seven.",
-                    betting: "The line opened at -6 and has moved to -6.5, indicating money is coming in on the Ravens. The total has climbed from 44.0 to 45.5.",
-                    situational: "The Bears are on the road for the second consecutive week. The Ravens are playing at home after a dominant divisional win.",
-                    injuries: "CHI: RB D'Andre Swift (Ankle) is questionable. BAL: S Kyle Hamilton (Knee) is questionable but expected to play.",
-                    summary: "This is a significant mismatch. The Ravens are superior in nearly every facet of the game, from coaching and scheme to high-end talent and statistical performance. The Bears' struggling defense will not be able to contain Lamar Jackson and the Ravens' offense.",
-                    recommendation: "Baltimore Ravens -6.5"
+                    projection: "The model projects an **upset victory** for the Chicago Bears, who will win outright and cover the +6.5 spread. The single most predictive variable is that **Ravens QB Lamar Jackson is ruled OUT**. The Ravens' offense is 'impotent' without him and now faces a Bears defense that leads the NFL in takeaways. The betting line has not caught up to this reality.",
+                    stats: "The Bears are on a four-game winning streak and lead the NFL with **16 takeaways**. The Ravens' defense is statistically poor, ranking 30th in total yards allowed and 32nd in scoring defense (32.3 PPG).",
+                    scheme: "With Lamar Jackson out, the Ravens will rely on a backup, removing the dual-threat danger. This plays into the hands of the Bears' aggressive, **takeaway-oriented defense** under Dennis Allen. The Bears' offense should find success against a struggling Ravens defense.",
+                    betting: "The market has the Ravens as 6.5-point favorites. **This line was established when Jackson was expected to play.** His absence creates **significant value** on the underdog Bears.",
+                    injuries: "**Ravens QB Lamar Jackson is ruled OUT** (hamstring) - a catastrophic blow. Bears have significant injuries (TE Cole Kmet, top three CBs OUT), but the QB downgrade for Baltimore is a more impactful variable.",
                 },
-                statsData: {
-                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
-                    awayStats: [22.0, 330.1, 26.5, 370.0],
-                    homeStats: [28.3, 380.5, 18.0, 305.5],
-                    awayColor: 'rgba(0, 22, 65, 0.8)',
-                    homeColor: 'rgba(26, 25, 95, 0.8)'
-                }
+                statsData: {labels: ['Overall DVOA', 'Offense DVOA', 'Defense DVOA', 'Takeaways'], awayStats: [7, 18, 7, 16], homeStats: [28, 30, 30, 7], awayColor: 'rgba(0, 22, 65, 0.8)', homeColor: 'rgba(26, 25, 95, 0.8)'}
             },
             "mia-atl": {
-                id: "mia-atl",
-                away: "Miami Dolphins",
-                home: "Atlanta Falcons",
-                spread: "ATL -7.5",
-                predictedScore: "ATL 27 - MIA 23",
-                pick: "Miami Dolphins +7.5",
-                confidence: 2,
-                time: "1:00 PM (Sun)",
+                id: "mia-atl", away: "Miami Dolphins", home: "Atlanta Falcons", spread: "ATL -7.5", predictedScore: "ATL 23 - MIA 13", pick: "Falcons -7.5", confidence: 4, time: "1:00 PM (Sun)",
                 analysis: {
-                    projection: "The model projects a final score of Atlanta 27, Miami 23. This outcome indicates a win for the Falcons, but they fail to cover the large -7.5-point spread.",
-                    stats: "MIA: 31.5 PPG (1st), 420.1 YPG (1st), 24.0 PPG Allowed (23rd), 350.5 YPG Allowed (22nd). ATL: 23.0 PPG (16th), 345.0 YPG (17th), 20.5 PPG Allowed (12th), 320.0 YPG Allowed (10th). This highlights a clash between Miami's top-ranked offense and Atlanta's respectable defense.",
-                    scheme: "The Falcons' offense, which relies heavily on play-action and the run game, will test the discipline of the Dolphins' defense. Miami's speed-based offense will be a major challenge for the Falcons' secondary.",
-                    players: "MIA WR Tyreek Hill vs. ATL CB A.J. Terrell is the premier matchup. ATL QB Kirk Cousins' efficiency against the Dolphins' blitz-heavy scheme will be key.",
-                    betting: "This line is surprisingly large, opening at -7 and moving to -7.5. This suggests strong market respect for the Falcons at home or a potential injury concern for Miami.",
-                    situational: "Miami is playing its first game after a bye week. Atlanta is playing at home after a tough road loss.",
-                    injuries: "MIA: QB Tua Tagovailoa (Shoulder) is listed as questionable, which is the primary reason for this large spread. RB De'Von Achane (Knee) is also questionable.",
-                    summary: "This prediction hinges on the health of Tua Tagovailoa. Assuming he plays, the Dolphins' offense is explosive enough to keep this game well within the 7.5-point spread, even against a solid Falcons team.",
-                    recommendation: "Miami Dolphins +7.5"
+                    projection: "The model projects a **decisive victory and cover** for the Atlanta Falcons. This prediction is anchored by the profound mismatch between the Falcons' **elite defense and the Dolphins' struggling, injury-plagued offense**. The Falcons' ability to shut down the pass will neutralize Miami's primary strength, leading to a comfortable, double-digit win.",
+                    stats: "Falcons rank **2nd in total yards allowed** (265.2 YPG) and **1st in passing yards allowed** (141.2 YPG). The Dolphins are in a severe slump, with QB Tua Tagovailoa throwing 1 TD vs 6 INTs in his last two games. Miami's run defense ranks 32nd in the league.",
+                    scheme: "The Falcons run a 3-4 scheme under Jeff Ulbrich that excels at limiting explosive pass plays—a direct challenge to the Dolphins' speed-based offense. The Falcons' own rushing attack will face Miami's **32nd-ranked run defense**.",
+                    betting: "The market has installed the Falcons as heavy 7.5-point home favorites, reflecting high confidence in Atlanta's defense and Miami's abysmal road performance (1-3 ATS). The low total of 44.5 is a signal for a defensive game.",
+                    injuries: "Dolphins will be without top two TEs **Darren Waller** (IR) and **Julian Hill** (OUT), severely limiting their offense. Falcons QB Michael Penix Jr. (knee) is questionable, but the model views the Falcons' defensive dominance as the primary driver regardless of QB.",
                 },
-                statsData: {
-                    labels: ['PPG', 'YPG', 'PPG Allowed', 'YPG Allowed'],
-                    awayStats: [31.5, 420.1, 24.0, 350.5],
-                    homeStats: [23.0, 345.0, 20.5, 320.0],
-                    awayColor: 'rgba(0, 142, 151, 0.8)',
-                    homeColor: 'rgba(167, 25, 48, 0.8)'
-                }
+                statsData: {labels: ['Overall DVOA', 'Pass Defense Rank', 'Run Defense Rank', 'Rushing Yards/Game'], awayStats: [25, 10, 32, 85.0], homeStats: [11, 1, 15, 136.5], awayColor: 'rgba(0, 142, 151, 0.8)', homeColor: 'rgba(167, 25, 48, 0.8)'}
+            },
+            "cle-ne": {
+                id: "cle-ne", away: "Cleveland Browns", home: "New England Patriots", spread: "NE -7", predictedScore: "NE 20 - CLE 10", pick: "Patriots -7", confidence: 3, time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a Patriots victory and a cover of the -7 spread. While the Browns' defense is formidable, their **offensive ineptitude is a more powerful and predictive factor**. The Patriots' defense is more than capable of shutting down a Browns offense that struggles to move the ball. The Patriots' superior offense and home-field advantage prove to be the difference.",
+                    stats: "Browns defense is **1st in total yards allowed** (256.1 YPG). Browns offense is **31st in points per play** and **30th in scoring**. Patriots offense is 'electric lately' with an EPA/Play of +0.08. The low total of 40.5 reflects defensive strength and offensive struggles.",
+                    scheme: "The decisive factor is the Patriots' ability to protect Maye against the Browns' ferocious front four (led by Myles Garrett). The Browns' timing-based offense under Stefanski will struggle against a disciplined Patriots 3-4 defense that excels at limiting mistakes.",
+                    betting: "Patriots are consensus 7-point favorites with a **very low total of 40.5 points**. The Patriots are **5-2 ATS** this season, indicating they are one of the most profitable teams for bettors.",
+                    injuries: "Patriots are relatively healthy. Browns TE **David Njoku** (knee) is questionable, which would be a needed boost. The Browns' only path to victory is through their defense creating turnovers.",
+                },
+                statsData: {labels: ['Overall DVOA', 'Offense EPA/Play', 'Defense DVOA', 'Turnover Differential'], awayStats: [15, -0.13, 2, -1], homeStats: [11, 0.08, 10, +5], awayColor: 'rgba(255, 60, 0, 0.8)', homeColor: 'rgba(0, 34, 68, 0.8)'}
+            },
+            "nyg-phi": {
+                id: "nyg-phi", away: "New York Giants", home: "Philadelphia Eagles", spread: "PHI -7.5", predictedScore: "PHI 26 - NYG 23", pick: "Giants +7.5", confidence: 4, time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects an Eagles victory but a strong cover for the New York Giants **+7.5**. The Giants are playing with **newfound confidence on offense** under QB Jaxson Dart, and the Eagles are dealing with significant injuries and negative regression markers (rushing efficiency plummeted to 31st). The game is expected to be a competitive, one-score divisional contest.",
+                    stats: "Eagles are reliant on an unsustainably high **red-zone TD rate (82%, 1st in NFL)**. Giants' offense is averaging **25.3 PPG since QB Jaxson Dart took over** (Week 4). The line movement favors the Giants, with metrics suggesting the gap is smaller than a touchdown.",
+                    scheme: "The Giants' defensive front leads the NFL in sack rate. The key matchup will be the Giants' defensive front against an Eagles offensive line that has not been as dominant in the run game this season. **Jaxson Dart's dual-threat ability** will test the Eagles' linebacker discipline.",
+                    betting: "Eagles are favored by 7.5 points. The underlying metrics suggest the gap is smaller than a touchdown, creating **potential value on the underdog Giants**. The Giants are 4-3 ATS this season.",
+                    injuries: "Eagles have ruled OUT star WR **A.J. Brown** (hamstring) and starting CB **Adoree' Jackson** (concussion). This significantly limits the Eagles' offensive ceiling. Giants are expecting the return of C John Michael Schmitz.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Rushing DVOA', 'Red Zone TD Rate'], awayStats: [-0.01, 26, -0.10, 50], homeStats: [0.08, 13, -0.25, 82], awayColor: 'rgba(0, 50, 150, 0.8)', homeColor: 'rgba(8, 54, 87, 0.8)'}
+            },
+            "buf-car": {
+                id: "buf-car", away: "Buffalo Bills", home: "Carolina Panthers", spread: "BUF -7.5", predictedScore: "BUF 30 - CAR 20", pick: "Bills -7.5", confidence: 3, time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a Buffalo Bills victory and a cover of the -7.5 spread. The combination of a motivated Bills team coming off a **bye week** and a strong historical trend of offensive resurgence under Josh Allen in these situations is a powerful one. The Bills' offense should be able to score enough points to pull away in the second half.",
+                    stats: "Bills are 7th in points per play. The Panthers have been a surprise team, with a **5-2 ATS record** and a defense ranking 7th in total yards allowed. Bills are 8-0 SU in games following a bye week under McDermott.",
+                    scheme: "The Bills' offense will face a stout Panthers defense. The biggest schematic shift is for the Panthers, where veteran **Andy Dalton is expected to start for the injured Bryce Young**. Dalton is a capable game manager who will rely on the run game.",
+                    betting: "Bills are favored by 7.5 points. The line reflects the market's belief in their **post-bye rebound** and the significant downgrade from Young to Dalton.",
+                    injuries: "Panthers QB **Bryce Young** (ankle) is listed as **doubtful** (likely Andy Dalton start). Bills S Taylor Rapp (knee) and DT DaQuan Jones (calf) are ruled OUT, but offensive firepower is expected to dominate.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Turnover Differential', 'Post-Bye Record (SU)'], awayStats: [0.10, 17, +2, 8], homeStats: [-0.05, 12, -1, 0], awayColor: 'rgba(0, 51, 141, 0.8)', homeColor: 'rgba(0, 138, 163, 0.8)'}
+            },
+            "sf-hou": {
+                id: "sf-hou", away: "San Francisco 49ers", home: "Houston Texans", spread: "HOU -1.5", predictedScore: "SF 19 - HOU 16", pick: "49ers +1.5", confidence: 5, time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects an **upset victory** for the San Francisco 49ers, who will also cover as +1.5 underdogs. This is the model's **highest-confidence pick** of the week. While the loss of Brock Purdy is significant, the loss of **Nico Collins** for the Texans is **statistically more impactful**. The predictive drop-off in QB C.J. Stroud's performance without his top target is severe and quantifiable.",
+                    stats: "Texans boast the league's **top-ranked scoring defense (14.7 PPG)** and 4th-ranked total defense. Texans QB C.J. Stroud's EPA/play **plummets to 0.025 without Nico Collins** (from 0.132 with him).",
+                    scheme: "This game is a **low-possession, defensive grind**. The decisive matchup will be the 49ers' secondary against a Texans receiving corps that will be without its top two players (Collins and Kirk).",
+                    betting: "Texans are slight 1.5-point home favorites, reflecting the Texans' defensive dominance and home-field advantage. The **very low total of 41.5** is a strong market signal for a defensive struggle.",
+                    injuries: "49ers: QB **Brock Purdy** (toe) and WR **Ricky Pearsall** (knee) **ruled OUT**. **Mac Jones** will start. Texans: WR **Nico Collins** (concussion) and WR **Christian Kirk** (hamstring) **ruled OUT**. The combined loss of Texans receivers is the most critical variable.",
+                },
+                statsData: {labels: ['Overall DVOA', 'Offense EPA/Play', 'Defense EPA/Play', 'Scoring Defense (PPG)'], awayStats: [12, -0.05, -0.05, 18.5], homeStats: [10, -0.10, -0.14, 14.7], awayColor: 'rgba(170, 0, 0, 0.8)', homeColor: 'rgba(0, 20, 39, 0.8)'}
+            },
+            "tb-no": {
+                id: "tb-no", away: "Tampa Bay Buccaneers", home: "New Orleans Saints", spread: "TB -4.5", predictedScore: "NO 24 - TB 20", pick: "Saints +4.5", confidence: 5, time: "4:05 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **decisive upset victory** for the New Orleans Saints, who will win outright and easily cover the +4.5 spread. This is the model's other **highest-confidence pick** of the week. The confluence of **negative situational factors and devastating injuries** for the Buccaneers is too significant to ignore. A healthy Saints team playing at home on normal rest holds every conceivable advantage.",
+                    stats: "Buccaneers rank 10th in power rankings but their defense ranks a surprisingly low 17th. Saints' offense is poor (28th in points per play). Saints are **ranked higher than the Bucs in the model's DVOA defense metric.**",
+                    scheme: "Buccaneers run a system focused on downfield passing with QB Baker Mayfield. The key matchup will be the **Buccaneers' depleted offense against a surprisingly healthy Saints defense**.",
+                    betting: "The line has dropped from TB -6.5, indicating that **sharp money has come in on the underdog Saints**. This line movement is a strong signal that the market is factoring in the situational and injury disadvantages for Tampa Bay.",
+                    injuries: "Buccaneers have ruled **OUT four key players**: OLB Haason Reddick, WR Chris Godwin Jr., RB Bucky Irving, and G Luke Haggard. Pro Bowl NT Vita Vea is questionable. **Saints enter the game with no players carrying an injury designation** for Sunday.",
+                },
+                statsData: {labels: ['Overall DVOA', 'Defense DVOA', 'Turnover Differential', 'Road/Home Record'], awayStats: [12, 17, +4, "5-2 / 2-1"], homeStats: [29, 18, +1, "1-6 / 0-3"], awayColor: 'rgba(213, 10, 10, 0.8)', homeColor: 'rgba(170, 153, 114, 0.8)'}
+            },
+            "dal-den": {
+                id: "dal-den", away: "Dallas Cowboys", home: "Denver Broncos", spread: "DEN -3.5", predictedScore: "DEN 28 - DAL 24", pick: "Broncos -3.5", confidence: 3, time: "4:25 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **victory and cover for the Denver Broncos**. The deciding factor is the **catastrophic state of the Dallas secondary**. A healthy and well-coached Broncos team is perfectly positioned to exploit this weakness at home, where they are on a nine-game winning streak. The altitude also plays a significant factor.",
+                    stats: "Cowboys boast the league's **top-ranked offense** in total yards but their defense ranks **32nd in total yards allowed** and **30th in defensive DVOA**. Broncos defense ranks **3rd in total yards allowed** and **5th in EPA per play allowed**.",
+                    scheme: "The Broncos' passing attack, featuring receivers Courtland Sutton and Marvin Mims Jr., will face a Dallas secondary that has been **completely ravaged by injuries** (All-Pro CB Trevon Diggs OUT). The altitude in Denver affects stamina and offensive line play for visiting teams.",
+                    betting: "Broncos are 3.5-point home favorites, with the highest total of the week at **50.5 points**. The high total reflects the vulnerability of the Cowboys' defense and the explosive potential of their offense.",
+                    injuries: "Cowboys' secondary is in crisis: All-Pro CB **Trevon Diggs** (concussion) and starting S **Donovan Wilson** (elbow/shoulder) are **ruled OUT**. Broncos are remarkably healthy, with their entire starting lineup expected to be available.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Turnover Differential', 'Total Yards Allowed'], awayStats: [0.18, 30, +4, 405.0], homeStats: [-0.01, 3, -1, 275.0], awayColor: 'rgba(0, 34, 68, 0.8)', homeColor: 'rgba(0, 34, 68, 0.8)'} // Cowboys/Broncos share colors, adjust shades if needed
+            },
+            "ten-ind": {
+                id: "ten-ind", away: "Tennessee Titans", home: "Indianapolis Colts", spread: "IND -14.5", predictedScore: "IND 34 - TEN 13", pick: "Colts -14.5", confidence: 4, time: "4:25 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **dominant victory and cover** for the Indianapolis Colts. This is the **most lopsided matchup of the week**. The immense talent and performance gap is exacerbated by Tennessee's critical injuries. The Colts' top-ranked offense should be able to score at will against a depleted Titans defense.",
+                    stats: "Colts offense ranks **1st in DVOA**, **1st in EPA/play**, and has the **best point differential (+92)**. Titans rank **32nd in overall DVOA** and **32nd in offense DVOA**, with a **league-worst -96 point differential**. Titans average a league-worst 3.9 yards per play.",
+                    scheme: "The Colts' top-ranked rushing offense will dominate a Titans defense missing its anchor in Jeffery Simmons. The Titans' league-worst offense has no viable path to moving the ball against a solid Colts defense.",
+                    betting: "The Colts are massive **14.5-point home favorites**, the largest spread of the 2025 season. This reflects the market's complete lack of faith in the Titans.",
+                    injuries: "Titans will be without their two best players: All-Pro DT **Jeffery Simmons** (hamstring) and leading WR **Calvin Ridley** (hamstring). The Colts are getting healthier, with WR Josh Downs clearing concussion protocol.",
+                },
+                statsData: {labels: ['Overall DVOA', 'Offense DVOA', 'Defense DVOA', 'Point Differential'], awayStats: [32, 32, 29, -96], homeStats: [1, 1, 14, +92], awayColor: 'rgba(78, 142, 203, 0.8)', homeColor: 'rgba(0, 131, 203, 0.8)'}
+            },
+            "gb-pit": {
+                id: "gb-pit", away: "Green Bay Packers", home: "Pittsburgh Steelers", spread: "GB -3", predictedScore: "PIT 24 - GB 23", pick: "Steelers +3", confidence: 3, time: "8:20 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **narrow upset victory** for the Pittsburgh Steelers, who will win the game outright as **+3 underdogs**. The model places significant weight on the powerful and long-standing situational trend of **Mike Tomlin's historic success as a home underdog** (21-7-3 ATS career). The Steelers' defense is expected to play above its season-long baseline.",
+                    stats: "Packers passing attack is **2nd in the league in EPA per dropback**. Steelers defense ranks **28th in total yards allowed** and **31st in passing yards allowed**. Steelers offense ranks 5th in points per play.",
+                    scheme: "The key matchup is the **Packers' efficient offense against the Steelers' vulnerable secondary**. The Steelers' defense will heavily utilize the primetime atmosphere to generate pressure on Jordan Love, disrupting the timing of the Packers' passing game.",
+                    betting: "Packers are 3-point road favorites. The market acknowledges the difficulty of winning in Pittsburgh in primetime. **Mike Tomlin's teams are 21-7-3 ATS as home underdogs** in his career—one of the most reliable trends in the NFL.",
+                    injuries: "Steelers will be without WR Scotty Miller (finger). Packers have a longer list of questionable players, including WR Christian Watson (knee). The Packers' injury situation appears slightly more precarious.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Pass Yards Allowed Rank', 'Tomlin ATS Record (+3 Home)'], awayStats: [0.15, 17, 10, 0], homeStats: [0.05, 28, 31, 21], awayColor: 'rgba(24, 48, 40, 0.8)', homeColor: 'rgba(255, 182, 18, 0.8)'}
+            },
+            "was-kc": {
+                id: "was-kc", away: "Washington Commanders", home: "Kansas City Chiefs", spread: "KC -12.5", predictedScore: "KC 31 - WAS 16", pick: "Chiefs -12.5", confidence: 4, time: "8:15 PM (Mon)",
+                analysis: {
+                    projection: "The model projects a **dominant victory and cover** for the Kansas City Chiefs. This is a severe mismatch on every level. The Chiefs are a Super Bowl contender playing their best football of the season, while the Commanders are a middling team forced to start a **backup quarterback** in the league's most hostile environment. The Chiefs should easily cover the -12.5 spread.",
+                    stats: "Chiefs offense and defense are on a sharp upward trajectory. Chiefs defense ranks **5th in total yards allowed** and **3rd in points allowed**. Commanders have a **-5 turnover differential**. Commanders' offense will be completely shut down.",
+                    scheme: "The Chiefs' aggressive defense will be able to dictate terms against an **immobile backup quarterback**. The key matchup will be TE **Travis Kelce** against the Commanders' linebackers and safeties.",
+                    betting: "The Chiefs are massive **12.5-point home favorites** on Monday Night Football. The line is fully justified given the talent disparity and the Commanders' critical injury at quarterback.",
+                    injuries: "Commanders starting QB **Jayden Daniels** (hamstring) is **ruled OUT**. Veteran **Marcus Mariota** will start. DT Daron Payne (toe) is also not practicing. The Commanders' sheer volume of injuries creates a talent deficit too large to overcome.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Turnover Differential', 'PPG Allowed Rank'], awayStats: [-0.10, 24, -5, 25], homeStats: [0.12, 9, +5, 3], awayColor: 'rgba(90, 20, 20, 0.8)', homeColor: 'rgba(255, 184, 28, 0.8)'}
+            },
+            "phi-nyg": {
+                id: "phi-nyg", away: "Philadelphia Eagles", home: "New York Giants", spread: "PHI -7.5", predictedScore: "PHI 26 - NYG 23", pick: "Giants +7.5", confidence: 4, time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects an Eagles victory but a strong cover for the New York Giants **+7.5**. The Giants are playing with **newfound confidence on offense** under QB Jaxson Dart, and the Eagles are dealing with significant injuries and negative regression markers (rushing efficiency plummeted to 31st). The game is expected to be a competitive, one-score divisional contest.",
+                    stats: "Eagles are reliant on an unsustainably high **red-zone TD rate (82%, 1st in NFL)**. Giants' offense is averaging **25.3 PPG since QB Jaxson Dart took over** (Week 4). The line movement favors the Giants, with metrics suggesting the gap is smaller than a touchdown.",
+                    scheme: "The Giants' defensive front leads the NFL in sack rate. The key matchup will be the Giants' defensive front against an Eagles offensive line that has not been as dominant in the run game this season. **Jaxson Dart's dual-threat ability** will test the Eagles' linebacker discipline.",
+                    betting: "Eagles are favored by 7.5 points. The underlying metrics suggest the gap is smaller than a touchdown, creating **potential value on the underdog Giants**. The Giants are 4-3 ATS this season.",
+                    injuries: "Eagles have ruled OUT star WR **A.J. Brown** (hamstring) and starting CB **Adoree' Jackson** (concussion). This significantly limits the Eagles' offensive ceiling. Giants are expecting the return of C John Michael Schmitz.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Rushing DVOA', 'Red Zone TD Rate'], awayStats: [0.08, 13, -0.25, 82], homeStats: [-0.01, 26, -0.10, 50], awayColor: 'rgba(8, 54, 87, 0.8)', homeColor: 'rgba(0, 50, 150, 0.8)'}
+            },
+            "car-buf": {
+                id: "car-buf", away: "Carolina Panthers", home: "Buffalo Bills", spread: "BUF -7.5", predictedScore: "BUF 30 - CAR 20", pick: "Bills -7.5", confidence: 3, time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a Buffalo Bills victory and a cover of the -7.5 spread. The combination of a motivated Bills team coming off a **bye week** and a strong historical trend of offensive resurgence under Josh Allen in these situations is a powerful one. The Bills' offense should be able to score enough points to pull away in the second half.",
+                    stats: "Bills are 7th in points per play. The Panthers have been a surprise team, with a **5-2 ATS record** and a defense ranking 7th in total yards allowed. Bills are 8-0 SU in games following a bye week under McDermott.",
+                    scheme: "The Bills' offense will face a stout Panthers defense. The biggest schematic shift is for the Panthers, where veteran **Andy Dalton is expected to start for the injured Bryce Young**. Dalton is a capable game manager who will rely on the run game.",
+                    betting: "Bills are favored by 7.5 points. The line reflects the market's belief in their **post-bye rebound** and the significant downgrade from Young to Dalton.",
+                    injuries: "Panthers QB **Bryce Young** (ankle) is listed as **doubtful** (likely Andy Dalton start). Bills S Taylor Rapp (knee) and DT DaQuan Jones (calf) are ruled OUT, but offensive firepower is expected to dominate.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Turnover Differential', 'Post-Bye Record (SU)'], awayStats: [-0.05, 12, -1, 0], homeStats: [0.10, 17, +2, 8], awayColor: 'rgba(0, 138, 163, 0.8)', homeColor: 'rgba(0, 51, 141, 0.8)'}
+            },
+            "hou-sf": {
+                id: "hou-sf", away: "Houston Texans", home: "San Francisco 49ers", spread: "HOU -1.5", predictedScore: "SF 19 - HOU 16", pick: "49ers +1.5", confidence: 5, time: "1:00 PM (Sun)",
+                analysis: {
+                    projection: "The model projects an **upset victory** for the San Francisco 49ers, who will also cover as +1.5 underdogs. This is the model's **highest-confidence pick** of the week. While the loss of Brock Purdy is significant, the loss of **Nico Collins** for the Texans is **statistically more impactful**. The predictive drop-off in QB C.J. Stroud's performance without his top target is severe and quantifiable.",
+                    stats: "Texans boast the league's **top-ranked scoring defense (14.7 PPG)** and 4th-ranked total defense. Texans QB C.J. Stroud's EPA/play **plummets to 0.025 without Nico Collins** (from 0.132 with him).",
+                    scheme: "This game is a **low-possession, defensive grind**. The decisive matchup will be the 49ers' secondary against a Texans receiving corps that will be without its top two players (Collins and Kirk).",
+                    betting: "Texans are slight 1.5-point home favorites, reflecting the Texans' defensive dominance and home-field advantage. The **very low total of 41.5** is a strong market signal for a defensive struggle.",
+                    injuries: "49ers: QB **Brock Purdy** (toe) and WR **Ricky Pearsall** (knee) **ruled OUT**. **Mac Jones** will start. Texans: WR **Nico Collins** (concussion) and WR **Christian Kirk** (hamstring) **ruled OUT**. The combined loss of Texans receivers is the most critical variable.",
+                },
+                statsData: {labels: ['Overall DVOA', 'Offense EPA/Play', 'Defense EPA/Play', 'Scoring Defense (PPG)'], awayStats: [10, -0.10, -0.14, 14.7], homeStats: [12, -0.05, -0.05, 18.5], awayColor: 'rgba(0, 20, 39, 0.8)', homeColor: 'rgba(170, 0, 0, 0.8)'}
+            },
+            "no-tb": {
+                id: "no-tb", away: "New Orleans Saints", home: "Tampa Bay Buccaneers", spread: "TB -4.5", predictedScore: "NO 24 - TB 20", pick: "Saints +4.5", confidence: 5, time: "4:05 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **decisive upset victory** for the New Orleans Saints, who will win outright and easily cover the +4.5 spread. This is the model's other **highest-confidence pick** of the week. The confluence of **negative situational factors and devastating injuries** for the Buccaneers is too significant to ignore. A healthy Saints team playing at home on normal rest holds every conceivable advantage.",
+                    stats: "Buccaneers rank 10th in power rankings but their defense ranks a surprisingly low 17th. Saints' offense is poor (28th in points per play). Saints are **ranked higher than the Bucs in the model's DVOA defense metric.**",
+                    scheme: "Buccaneers run a system focused on downfield passing with QB Baker Mayfield. The key matchup will be the **Buccaneers' depleted offense against a surprisingly healthy Saints defense**.",
+                    betting: "The line has dropped from TB -6.5, indicating that **sharp money has come in on the underdog Saints**. This line movement is a strong signal that the market is factoring in the situational and injury disadvantages for Tampa Bay.",
+                    injuries: "Buccaneers have ruled **OUT four key players**: OLB Haason Reddick, WR Chris Godwin Jr., RB Bucky Irving, and G Luke Haggard. Pro Bowl NT Vita Vea is questionable. **Saints enter the game with no players carrying an injury designation** for Sunday.",
+                },
+                statsData: {labels: ['Overall DVOA', 'Defense DVOA', 'Turnover Differential', 'Road/Home Record'], awayStats: [29, 18, +1, "1-6 / 0-3"], homeStats: [12, 17, +4, "5-2 / 2-1"], awayColor: 'rgba(170, 153, 114, 0.8)', homeColor: 'rgba(213, 10, 10, 0.8)'}
+            },
+            "den-dal": {
+                id: "den-dal", away: "Denver Broncos", home: "Dallas Cowboys", spread: "DEN -3.5", predictedScore: "DEN 28 - DAL 24", pick: "Broncos -3.5", confidence: 3, time: "4:25 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **victory and cover for the Denver Broncos**. The deciding factor is the **catastrophic state of the Dallas secondary**. A healthy and well-coached Broncos team is perfectly positioned to exploit this weakness at home, where they are on a nine-game winning streak. The altitude also plays a significant factor.",
+                    stats: "Cowboys boast the league's **top-ranked offense** in total yards but their defense ranks **32nd in total yards allowed** and **30th in defensive DVOA**. Broncos defense ranks **3rd in total yards allowed** and **5th in EPA per play allowed**.",
+                    scheme: "The Broncos' passing attack, featuring receivers Courtland Sutton and Marvin Mims Jr., will face a Dallas secondary that has been **completely ravaged by injuries** (All-Pro CB Trevon Diggs OUT). The altitude in Denver affects stamina and offensive line play for visiting teams.",
+                    betting: "Broncos are 3.5-point home favorites, with the highest total of the week at **50.5 points**. The high total reflects the vulnerability of the Cowboys' defense and the explosive potential of their offense.",
+                    injuries: "Cowboys' secondary is in crisis: All-Pro CB **Trevon Diggs** (concussion) and starting S **Donovan Wilson** (elbow/shoulder) are **ruled OUT**. Broncos are remarkably healthy, with their entire starting lineup expected to be available.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Turnover Differential', 'Total Yards Allowed'], awayStats: [-0.01, 3, -1, 275.0], homeStats: [0.18, 30, +4, 405.0], awayColor: 'rgba(0, 34, 68, 0.8)', homeColor: 'rgba(0, 34, 68, 0.8)'}
+            },
+            "ind-ten": {
+                id: "ind-ten", away: "Indianapolis Colts", home: "Tennessee Titans", spread: "IND -14.5", predictedScore: "IND 34 - TEN 13", pick: "Colts -14.5", confidence: 4, time: "4:25 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **dominant victory and cover** for the Indianapolis Colts. This is the **most lopsided matchup of the week**. The immense talent and performance gap is exacerbated by Tennessee's critical injuries. The Colts' top-ranked offense should be able to score at will against a depleted Titans defense.",
+                    stats: "Colts offense ranks **1st in DVOA**, **1st in EPA/play**, and has the **best point differential (+92)**. Titans rank **32nd in overall DVOA** and **32nd in offense DVOA**, with a **league-worst -96 point differential**. Titans average a league-worst 3.9 yards per play.",
+                    scheme: "The Colts' top-ranked rushing offense will dominate a Titans defense missing its anchor in Jeffery Simmons. The Titans' league-worst offense has no viable path to moving the ball against a solid Colts defense.",
+                    betting: "The Colts are massive **14.5-point home favorites**, the largest spread of the 2025 season. This reflects the market's complete lack of faith in the Titans.",
+                    injuries: "Titans will be without their two best players: All-Pro DT **Jeffery Simmons** (hamstring) and leading WR **Calvin Ridley** (hamstring). The Colts are getting healthier, with WR Josh Downs clearing concussion protocol.",
+                },
+                statsData: {labels: ['Overall DVOA', 'Offense DVOA', 'Defense DVOA', 'Point Differential'], awayStats: [1, 1, 14, +92], homeStats: [32, 32, 29, -96], awayColor: 'rgba(0, 131, 203, 0.8)', homeColor: 'rgba(78, 142, 203, 0.8)'}
+            },
+            "pit-gb": {
+                id: "pit-gb", away: "Pittsburgh Steelers", home: "Green Bay Packers", spread: "GB -3", predictedScore: "PIT 24 - GB 23", pick: "Steelers +3", confidence: 3, time: "8:20 PM (Sun)",
+                analysis: {
+                    projection: "The model projects a **narrow upset victory** for the Pittsburgh Steelers, who will win the game outright as **+3 underdogs**. The model places significant weight on the powerful and long-standing situational trend of **Mike Tomlin's historic success as a home underdog** (21-7-3 ATS career). The Steelers' defense is expected to play above its season-long baseline.",
+                    stats: "Packers passing attack is **2nd in the league in EPA per dropback**. Steelers defense ranks **28th in total yards allowed** and **31st in passing yards allowed**. Steelers offense ranks 5th in points per play.",
+                    scheme: "The key matchup is the **Packers' efficient offense against the Steelers' vulnerable secondary**. The Steelers' defense will heavily utilize the primetime atmosphere to generate pressure on Jordan Love, disrupting the timing of the Packers' passing game.",
+                    betting: "Packers are 3-point road favorites. The market acknowledges the difficulty of winning in Pittsburgh in primetime. **Mike Tomlin's teams are 21-7-3 ATS as home underdogs** in his career—one of the most reliable trends in the NFL.",
+                    injuries: "Steelers will be without WR Scotty Miller (finger). Packers have a longer list of questionable players, including WR Christian Watson (knee). The Packers' injury situation appears slightly more precarious.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Pass Yards Allowed Rank', 'Tomlin ATS Record (+3 Home)'], awayStats: [0.05, 28, 31, 21], homeStats: [0.15, 17, 10, 0], awayColor: 'rgba(255, 182, 18, 0.8)', homeColor: 'rgba(24, 48, 40, 0.8)'}
+            },
+            "kc-was": {
+                id: "kc-was", away: "Kansas City Chiefs", home: "Washington Commanders", spread: "KC -12.5", predictedScore: "KC 31 - WAS 16", pick: "Chiefs -12.5", confidence: 4, time: "8:15 PM (Mon)",
+                analysis: {
+                    projection: "The model projects a **dominant victory and cover** for the Kansas City Chiefs. This is a severe mismatch on every level. The Chiefs are a Super Bowl contender playing their best football of the season, while the Commanders are a middling team forced to start a **backup quarterback** in the league's most hostile environment. The Chiefs should easily cover the -12.5 spread.",
+                    stats: "Chiefs offense and defense are on a sharp upward trajectory. Chiefs defense ranks **5th in total yards allowed** and **3rd in points allowed**. Commanders have a **-5 turnover differential**. Commanders' offense will be completely shut down.",
+                    scheme: "The Chiefs' aggressive defense will be able to dictate terms against an **immobile backup quarterback**. The key matchup will be TE **Travis Kelce** against the Commanders' linebackers and safeties.",
+                    betting: "The Chiefs are massive **12.5-point home favorites** on Monday Night Football. The line is fully justified given the talent disparity and the Commanders' critical injury at quarterback.",
+                    injuries: "Commanders starting QB **Jayden Daniels** (hamstring) is **ruled OUT**. Veteran **Marcus Mariota** will start. DT Daron Payne (toe) is also not practicing. The Commanders' sheer volume of injuries creates a talent deficit too large to overcome.",
+                },
+                statsData: {labels: ['Offense EPA/Play', 'Defense DVOA', 'Turnover Differential', 'PPG Allowed Rank'], awayStats: [0.12, 9, +5, 3], homeStats: [-0.10, 24, -5, 25], awayColor: 'rgba(255, 184, 28, 0.8)', homeColor: 'rgba(90, 20, 20, 0.8)'}
             }
         };
 
@@ -321,22 +524,57 @@
 
         function initApp() {
             renderScorecard();
+            renderTopPerformers('QB'); 
             attachNavListeners();
+            attachTopPerformerListeners();
         }
 
-        function getConfidenceRating(rating) {
+        function getConfidenceRating(ratingString) {
+            const rating = parseInt(ratingString.split('/')[0]);
             const filled = '<span class="text-emerald-500">🏈</span>';
             const empty = '<span class="opacity-30">🏈</span>';
             return filled.repeat(rating) + empty.repeat(5 - rating);
         }
+
+        function renderTopPerformers(position) {
+            const listEl = document.getElementById('topPerformersList');
+            const data = topPerformersData[position] || [];
+            listEl.innerHTML = '';
+
+            data.forEach((player, index) => {
+                const card = `
+                    <div class="bg-slate-700/50 p-3 rounded-lg flex items-center shadow-lg transition-all duration-200 hover:bg-slate-700">
+                        <span class="text-2xl font-bold text-emerald-500 mr-3">${index + 1}.</span>
+                        <div>
+                            <p class="font-bold text-sm text-slate-50">${player.name} (${player.team})</p>
+                            <p class="text-xs text-slate-400 font-mono">${player.stat}</p>
+                        </div>
+                    </div>
+                `;
+                listEl.innerHTML += card;
+            });
+        }
+
+        function attachTopPerformerListeners() {
+            document.querySelectorAll('.top-performer-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.top-performer-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderTopPerformers(btn.dataset.position);
+                });
+            });
+        }
+
 
         function renderScorecard() {
             const grid = document.getElementById('gamesGrid');
             grid.innerHTML = ''; 
             for (const gameId in allGameData) {
                 const game = allGameData[gameId];
+                const [awayTeam, homeTeam] = game.predictedScore.split(' - ').map(s => s.trim().split(' ')[0]);
+
                 const card = `
-                    <div class="bg-slate-800 rounded-xl shadow-2xl p-6 transition-all duration-300 hover:shadow-emerald-500/20 flex flex-col justify-between border-t-4 border-emerald-500">
+                    <div class="bg-slate-800 rounded-xl shadow-2xl p-6 transition-all duration-300 hover:shadow-emerald-500/20 flex flex-col justify-between border-t-4 ${game.confidence >= 4 ? 'border-red-500' : 'border-emerald-500'}">
                         <div>
                             <p class="text-sm text-slate-400 mb-2">${game.time}</p>
                             <h3 class="text-xl font-bold text-slate-50 mb-1">${game.away}</h3>
@@ -352,19 +590,19 @@
                                     <p class="font-semibold text-slate-50">${game.spread}</p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-medium text-slate-400">Pick</p>
+                                    <p class="font-medium text-slate-400">Prediction (ATS)</p>
                                     <p class="font-semibold text-slate-50">${game.pick}</p>
                                 </div>
                             </div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-400 mb-1">Confidence</p>
+                            <div class="mt-2">
+                                <p class="text-sm font-medium text-slate-400 mb-1">Confidence (${game.confidence}/5)</p>
                                 <div class="text-xl" aria-label="Confidence: ${game.confidence} out of 5">
                                     ${getConfidenceRating(game.confidence)}
                                 </div>
                             </div>
                         </div>
                         <button class="view-analysis-btn mt-6 w-full bg-emerald-500 text-slate-900 font-bold py-2 px-4 rounded-lg hover:bg-emerald-400 transition-colors shadow-lg hover:shadow-emerald-400/40" data-gameid="${game.id}">
-                            View Analysis
+                            View Full Dossier
                         </button>
                     </div>
                 `;
@@ -399,10 +637,10 @@
             showDetailTab(gameId, 'summary');
 
             document.querySelectorAll('.detail-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
+                tab.addEventListener('click', (e) => {
                     document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    showDetailTab(gameId, tab.dataset.tab);
+                    e.target.classList.add('active');
+                    showDetailTab(gameId, e.target.dataset.tab);
                 });
             });
         }
@@ -416,51 +654,35 @@
                 myStatsChart = null;
             }
 
+            // Set up common content structure for a dossier entry
+            const content = (title, body) => `
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-emerald-500 mt-0 mb-2">${title}</h3>
+                    <p class="text-slate-300">${body}</p>
+                </div>
+            `;
+
             switch(tabName) {
                 case 'summary':
-                    contentEl.innerHTML = `
-                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Final Score Projection</h3>
-                        <p class="text-slate-300">${game.analysis.projection}</p>
-                        <h3 class="text-xl font-semibold text-slate-50 mt-4">Final Prediction Summary</h3>
-                        <p class="text-slate-300">${game.analysis.summary}</p>
-                        <h3 class="text-2xl font-bold text-emerald-500 mt-6">Recommendation: ${game.analysis.recommendation}</h3>
-                    `;
+                    contentEl.innerHTML = 
+                        content("Predicted Score & Rationale (Core Components Synthesis)", game.analysis.projection) +
+                        `<h3 class="text-2xl font-bold text-slate-50 mt-6">Model Prediction: ${game.pick}</h3>`;
                     break;
                 case 'stats':
-                    contentEl.innerHTML = `
-                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Statistical Deep Dive</h3>
-                        <p class="text-slate-300">${game.analysis.stats}</p>
-                        <div class="chart-container mt-6 bg-slate-700 p-4 rounded-lg">
+                    contentEl.innerHTML = content("Statistical Deep Dive (Core Components Synthesis)", game.analysis.stats) +
+                        `<div class="chart-container mt-6 bg-slate-700 p-4 rounded-lg">
                             <canvas id="statsChart"></canvas>
-                        </div>
-                    `;
+                        </div>`;
                     renderStatsChart(gameId);
                     break;
                 case 'scheme':
-                    contentEl.innerHTML = `
-                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Scheme & Matchup Analysis</h3>
-                        <p class="text-slate-300">${game.analysis.scheme}</p>
-                    `;
-                    break;
-                case 'players':
-                    contentEl.innerHTML = `
-                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Key Player Spotlight</h3>
-                        <p class="text-slate-300">${game.analysis.players}</p>
-                    `;
+                    contentEl.innerHTML = content("Scheme & Matchup Analysis (Core Components Synthesis)", game.analysis.scheme);
                     break;
                 case 'betting':
-                    contentEl.innerHTML = `
-                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Betting Market Analysis</h3>
-                        <p class="text-slate-300">${game.analysis.betting}</p>
-                    `;
+                    contentEl.innerHTML = content("Betting Market Analysis (Core Components Synthesis)", game.analysis.betting);
                     break;
                 case 'injuries':
-                    contentEl.innerHTML = `
-                        <h3 class="text-xl font-semibold text-slate-50 mt-0">Injury & Personnel Report</h3>
-                        <p class="text-slate-300">${game.analysis.injuries}</p>
-                        <h3 class="text-xl font-semibold text-slate-50 mt-4">Situational Factors</h3>
-                        <p class="text-slate-300">${game.analysis.situational}</p>
-                    `;
+                    contentEl.innerHTML = content("Injury & Personnel Report / Situational Factors (Focused Analytical Probes)", game.analysis.injuries);
                     break;
             }
         }
@@ -486,15 +708,15 @@
                         {
                             label: game.away,
                             data: stats.awayStats,
-                            backgroundColor: stats.awayColor,
-                            borderColor: stats.awayColor.replace('0.8', '1'),
+                            backgroundColor: game.awayColor,
+                            borderColor: game.awayColor.replace('0.8', '1'),
                             borderWidth: 1
                         },
                         {
                             label: game.home,
                             data: stats.homeStats,
-                            backgroundColor: stats.homeColor,
-                            borderColor: stats.homeColor.replace('0.8', '1'),
+                            backgroundColor: game.homeColor,
+                            borderColor: game.homeColor.replace('0.8', '1'),
                             borderWidth: 1
                         }
                     ]
@@ -506,7 +728,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Key Stat Comparison',
+                            text: 'Advanced Metric Comparison (Higher is Generally Better)',
                             font: { size: 16 },
                             color: '#f8fafc' // Slate-50 for title
                         },
@@ -523,7 +745,7 @@
                                         label += ': ';
                                     }
                                     if (context.parsed.x !== null) {
-                                        label += context.parsed.x;
+                                        label += context.parsed.x + (stats.labels[context.dataIndex].includes('DVOA') ? ' (DVOA)' : '');
                                     }
                                     return label;
                                 }
