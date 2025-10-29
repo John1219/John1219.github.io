@@ -5,17 +5,20 @@ const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 // Game variables
 let deck = [];
 let dealerHand = [];
-let userHand = [];
+let userHands = [];
+let activeHandIndex = 0;
 let aiHands = [];
 let numAIPlayers = 2; // Example: 2 AI players
 let playerChips = {}; // Stores chips for user and AI players
 let playerBets = {}; // Stores current bets for user and AI players
+let insuranceBet = 0;
 let gamePhase = 'betting'; // 'betting', 'dealing', 'playerTurn', 'dealerTurn', 'gameOver'
 
 // DOM elements
 const dealerHandElement = document.getElementById('dealer-hand');
 const dealerScoreElement = document.getElementById('dealer-score');
 const userHandElement = document.getElementById('user-hand');
+const splitHandElement = document.getElementById('split-hand');
 const userScoreElement = document.getElementById('user-score');
 const userChipsElement = document.getElementById('user-chips');
 const betInputElement = document.getElementById('bet-input');
@@ -24,8 +27,14 @@ const aiPlayersLeftElement = document.getElementById('ai-players-left');
 const aiPlayersRightElement = document.getElementById('ai-players-right');
 const hitButton = document.getElementById('hit-button');
 const standButton = document.getElementById('stand-button');
+const doubleDownButton = document.getElementById('double-down-button');
+const splitButton = document.getElementById('split-button');
 const startGameButton = document.getElementById('start-game-button');
+const buyInButton = document.getElementById('buy-in-button');
 const messageArea = document.getElementById('message-area');
+const insurancePrompt = document.getElementById('insurance-prompt');
+const insuranceYesButton = document.getElementById('insurance-yes-button');
+const insuranceNoButton = document.getElementById('insurance-no-button');
 
 // Function to create a new deck of cards
 function createDeck() {
@@ -110,7 +119,9 @@ function displayMessage(message) {
 function resetGame() {
     dealerHandElement.innerHTML = '';
     dealerScoreElement.textContent = '0';
-    userHandElement.innerHTML = '';
+    splitHandElement.innerHTML = '';
+    userHands = [];
+    activeHandIndex = 0;
     userScoreElement.textContent = '0';
     aiPlayersLeftElement.innerHTML = ''; // Clear existing AI players
     aiPlayersRightElement.innerHTML = ''; // Clear existing AI players
@@ -142,6 +153,7 @@ function resetGame() {
     }
 
     playerBets = {};
+    insuranceBet = 0;
 
     userChipsElement.textContent = playerChips['user'];
     document.getElementById('user-bet').textContent = '0';
@@ -166,6 +178,8 @@ function resetGame() {
 function startGame() {
     resetGame();
     displayMessage('Place your bets!');
+    placeBetButton.disabled = false;
+    betInputElement.disabled = false;
     // Game will proceed after bets are placed
 }
 
@@ -174,8 +188,8 @@ function renderGame() {
     renderHand(dealerHand, dealerHandElement, true);
     dealerScoreElement.textContent = calculateHandValue([dealerHand[1]]); // Only show visible card's value
 
-    renderHand(userHand, userHandElement);
-    userScoreElement.textContent = calculateHandValue(userHand);
+    renderHand(userHands[0], userHandElement);
+    userScoreElement.textContent = calculateHandValue(userHands[0]);
     userChipsElement.textContent = playerChips['user'];
 
     aiHands.forEach((hand, i) => {
@@ -191,16 +205,26 @@ function renderGame() {
     if (gamePhase === 'playerTurn') {
         hitButton.disabled = false;
         standButton.disabled = false;
+        const canDoubleDown = playerChips['user'] >= playerBets.user[activeHandIndex] && userHands[activeHandIndex].length === 2;
+        doubleDownButton.disabled = !canDoubleDown;
+
+        const canSplit = userHands.length === 1 && userHands[0].length === 2 && userHands[0][0].rank === userHands[0][1].rank && playerChips['user'] >= playerBets.user[0];
+        splitButton.disabled = !canSplit;
+
         placeBetButton.disabled = true;
         betInputElement.disabled = true;
     } else if (gamePhase === 'betting') {
         hitButton.disabled = true;
         standButton.disabled = true;
+        doubleDownButton.disabled = true;
+        splitButton.disabled = true;
         placeBetButton.disabled = false;
         betInputElement.disabled = false;
     } else {
         hitButton.disabled = true;
         standButton.disabled = true;
+        doubleDownButton.disabled = true;
+        splitButton.disabled = true;
         placeBetButton.disabled = true;
         betInputElement.disabled = true;
     }
@@ -208,22 +232,68 @@ function renderGame() {
 
 // User actions
 hitButton.addEventListener('click', () => {
-    dealCard(userHand);
-    renderHand(userHand, userHandElement);
-    userScoreElement.textContent = calculateHandValue(userHand);
-    if (calculateHandValue(userHand) > 21) {
+    doubleDownButton.disabled = true;
+    dealCard(userHands[activeHandIndex]);
+    renderGame();
+    if (calculateHandValue(userHands[activeHandIndex]) > 21) {
         displayMessage('Bust! You lose.');
-        hitButton.disabled = true;
-        standButton.disabled = true;
-        dealerTurn();
+        stand();
     }
 });
 
-standButton.addEventListener('click', () => {
-    hitButton.disabled = true;
-    standButton.disabled = true;
-    dealerTurn();
+standButton.addEventListener('click', stand);
+
+doubleDownButton.addEventListener('click', () => {
+    if (playerChips['user'] >= playerBets.user[activeHandIndex]) {
+        playerChips['user'] -= playerBets.user[activeHandIndex];
+        playerBets.user[activeHandIndex] *= 2;
+        userChipsElement.textContent = playerChips['user'];
+        document.getElementById('user-bet').textContent = playerBets.user.join(', ');
+
+        dealCard(userHands[activeHandIndex]);
+        renderGame();
+
+        if (calculateHandValue(userHands[activeHandIndex]) > 21) {
+            displayMessage('Bust! You lose.');
+            stand(); // Automatically stand on bust
+        } else {
+            stand(); // Automatically stand after doubling down
+        }
+    } else {
+        displayMessage("Not enough chips to double down.");
+    }
 });
+
+splitButton.addEventListener('click', () => {
+    if (userHands.length === 1 && userHands[0].length === 2 && userHands[0][0].rank === userHands[0][1].rank && playerChips['user'] >= playerBets.user[0]) {
+        const secondHand = [userHands[0].pop()];
+        userHands.push(secondHand);
+
+        playerChips['user'] -= playerBets.user[0];
+        playerBets.user.push(playerBets.user[0]);
+
+        dealCard(userHands[0]);
+        dealCard(userHands[1]);
+
+        activeHandIndex = 0;
+        renderGame();
+    } else {
+        displayMessage("You can't split.");
+    }
+});
+
+function stand() {
+    if (activeHandIndex < userHands.length - 1) {
+        activeHandIndex++;
+        renderGame();
+    } else {
+        hitButton.disabled = true;
+        standButton.disabled = true;
+        doubleDownButton.disabled = true;
+        splitButton.disabled = true;
+        dealerTurn();
+    }
+}
 
 startGameButton.addEventListener('click', startGame);
 
@@ -270,12 +340,27 @@ function determineWinner() {
 
     let userBust = userScore > 21;
     let dealerBust = dealerScore > 21;
-
     let userMessage = '';
+
+    if (insuranceBet > 0) {
+        if (dealerHasBlackjack) {
+            userMessage = 'Dealer has Blackjack! You win the insurance bet. ';
+            playerChips['user'] += insuranceBet * 3; // Insurance pays 2 to 1, so 3x the bet back
+        } else {
+            userMessage = 'Dealer does not have Blackjack. You lose the insurance bet. ';
+        }
+    }
 
     // User outcome
     if (userBust) {
         userMessage = 'You busted! Dealer wins.';
+    } else if (dealerHasBlackjack) {
+        if (userScore === 21 && userHand.length === 2) {
+            playerChips['user'] += playerBets['user']; // Push
+            userMessage = 'Push! You both have Blackjack.';
+        } else {
+            userMessage = 'Dealer has Blackjack! You lose.';
+        }
     } else if (dealerBust) {
         playerChips['user'] += playerBets['user'] * 2; // Win 1x bet + original bet back
         userMessage = 'Dealer busted! You win!';
@@ -331,50 +416,64 @@ function determineWinner() {
 
     if (playerChips['user'] <= 0) {
         displayMessage('You have run out of chips! Game over.');
-        startGameButton.disabled = true;
+        startGameButton.style.display = 'none';
         placeBetButton.disabled = true;
         betInputElement.disabled = true;
+        buyInButton.style.display = 'block';
     }
 
     gamePhase = 'gameOver';
     startGameButton.disabled = false;
 }
 
+// Function to handle buying in
+function buyIn() {
+    playerChips['user'] = 5000;
+    userChipsElement.textContent = playerChips['user'];
+    buyInButton.style.display = 'none';
+    startGameButton.style.display = 'block';
+    placeBetButton.disabled = false;
+    betInputElement.disabled = false;
+    startGame();
+}
+
+
 // Function to handle placing a bet
 function placeBet() {
     const betAmount = parseInt(betInputElement.value);
     if (betAmount > 0 && betAmount <= playerChips['user']) {
-        playerBets['user'] = betAmount;
+        playerBets = { user: [betAmount] };
+        userHands = [[]];
+        activeHandIndex = 0;
         playerChips['user'] -= betAmount;
-        userChipsElement.textContent = playerChips['user'];
         document.getElementById('user-bet').textContent = betAmount;
-        betInputElement.disabled = true;
-        placeBetButton.disabled = true;
+        userChipsElement.textContent = playerChips['user'];
 
-        // AI players place their bets (simple random bet for now)
+        // AI players place their bets (e.g., a random amount)
         for (let i = 0; i < numAIPlayers; i++) {
             const aiId = `ai-${i}`;
-            const aiBet = Math.min(playerChips[aiId], Math.floor(Math.random() * 500) + 50);
-            playerBets[aiId] = aiBet;
-            playerChips[aiId] -= aiBet;
-            document.getElementById(`ai-chips-${i}`).textContent = playerChips[aiId];
-            document.getElementById(`ai-bet-${i}`).textContent = aiBet;
+            if (playerChips[aiId] > 0) {
+                const aiBet = Math.min(playerChips[aiId], Math.floor(Math.random() * 200) + 50);
+                playerBets[aiId] = aiBet;
+                playerChips[aiId] -= aiBet;
+                document.getElementById(`ai-bet-${i}`).textContent = aiBet;
+                document.getElementById(`ai-chips-${i}`).textContent = playerChips[aiId];
+            }
         }
 
-        dealHands();
-        gamePhase = 'playerTurn';
-        renderGame();
+        placeBetButton.disabled = true;
+        betInputElement.disabled = true;
+        dealInitialCards();
     } else {
         displayMessage('Invalid bet amount.');
     }
 }
 
-// Function to deal initial hands
-function dealHands() {
+// Function to deal initial cards
+function dealInitialCards() {
     createDeck();
     shuffleDeck();
 
-    // Reset hands
     dealerHand = [];
     userHand = [];
     aiHands = [];
@@ -384,16 +483,53 @@ function dealHands() {
 
     // Deal two cards to each player and the dealer
     for (let i = 0; i < 2; i++) {
-        dealCard(userHand);
+        dealCard(userHands[0]);
         for (let j = 0; j < numAIPlayers; j++) {
-            dealCard(aiHands[j]);
+            if (playerChips[`ai-${j}`] > 0) {
+                dealCard(aiHands[j]);
+            }
         }
         dealCard(dealerHand);
     }
+
+    if (dealerHand[1].rank === 'A') {
+        offerInsurance();
+    } else {
+        gamePhase = 'playerTurn';
+        renderGame();
+    }
+}
+
+function offerInsurance() {
+    insurancePrompt.style.display = 'block';
+    insuranceYesButton.addEventListener('click', handleInsuranceChoice);
+    insuranceNoButton.addEventListener('click', handleInsuranceChoice);
+}
+
+function handleInsuranceChoice(event) {
+    insurancePrompt.style.display = 'none';
+    if (event.target.id === 'insurance-yes-button') {
+        const insuranceAmount = playerBets['user'] / 2;
+        if (playerChips['user'] >= insuranceAmount) {
+            playerChips['user'] -= insuranceAmount;
+            insuranceBet = insuranceAmount;
+            userChipsElement.textContent = playerChips['user'];
+        } else {
+            displayMessage("You don't have enough chips for insurance.");
+        }
+    }
+
+    // Remove event listeners to prevent multiple triggers
+    insuranceYesButton.removeEventListener('click', handleInsuranceChoice);
+    insuranceNoButton.removeEventListener('click', handleInsuranceChoice);
+
+    gamePhase = 'playerTurn';
+    renderGame();
 }
 
 // Initial game setup
 placeBetButton.addEventListener('click', placeBet);
 startGameButton.addEventListener('click', startGame);
+buyInButton.addEventListener('click', buyIn);
 
 resetGame();

@@ -18,6 +18,7 @@
             <div id="user-player">
                 <h3>You</h3>
                 <div id="user-hand" class="hand"></div>
+                <div id="split-hand" class="hand"></div>
                 <p>Score: <span id="user-score">0</span></p>
                 <p>Chips: <span id="user-chips">5000</span></p>
                 <p>Bet: <span id="user-bet">0</span></p>
@@ -28,13 +29,21 @@
                 <div id="user-controls">
                     <button id="hit-button">Hit</button>
                     <button id="stand-button">Stand</button>
+                    <button id="double-down-button">Double Down</button>
+                    <button id="split-button">Split</button>
                 </div>
             </div>
         </div>
         <div id="game-controls">
             <button id="start-game-button">Start Game</button>
+            <button id="buy-in-button" style="display: none;">Buy In</button>
         </div>
         <div id="message-area"></div>
+        <div id="insurance-prompt" style="display: none;">
+            <p>Dealer has an Ace. Do you want to buy insurance?</p>
+            <button id="insurance-yes-button">Yes</button>
+            <button id="insurance-no-button">No</button>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
