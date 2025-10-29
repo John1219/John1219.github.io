@@ -112,8 +112,8 @@ function resetGame() {
     dealerScoreElement.textContent = '0';
     userHandElement.innerHTML = '';
     userScoreElement.textContent = '0';
-    aiPlayersLeftElement.innerHTML = '';
-    aiPlayersRightElement.innerHTML = '';
+    aiPlayersLeftElement.innerHTML = ''; // Clear existing AI players
+    aiPlayersRightElement.innerHTML = ''; // Clear existing AI players
     messageArea.textContent = '';
 
     // Create AI player elements
@@ -124,7 +124,8 @@ function resetGame() {
             <h3>AI Player ${i + 1}</h3>
             <div id="ai-hand-${i}" class="hand"></div>
             <p>Score: <span id="ai-score-${i}">0</span></p>
-            <p>Chips: <span id="ai-chips-${i}">5000</span></p>
+            <p>Chips: <span id="ai-chips-${i}"></span></p>
+            <p>Bet: <span id="ai-bet-${i}">0</span></p>
         `;
         if (i < numAIPlayers / 2) {
             aiPlayersLeftElement.appendChild(aiPlayerElement);
@@ -133,13 +134,24 @@ function resetGame() {
         }
     }
 
-    playerChips = { 'user': 5000 };
-    for (let i = 0; i < numAIPlayers; i++) {
-        playerChips[`ai-${i}`] = 5000;
+    if (Object.keys(playerChips).length === 0) {
+        playerChips = { 'user': 5000 };
+        for (let i = 0; i < numAIPlayers; i++) {
+            playerChips[`ai-${i}`] = 5000;
+        }
     }
+
     playerBets = {};
 
     userChipsElement.textContent = playerChips['user'];
+    document.getElementById('user-bet').textContent = '0';
+    for (let i = 0; i < numAIPlayers; i++) {
+        if(document.getElementById(`ai-chips-${i}`)){
+            document.getElementById(`ai-chips-${i}`).textContent = playerChips[`ai-${i}`];
+            document.getElementById(`ai-bet-${i}`).textContent = '0';
+        }
+    }
+
     betInputElement.value = 100; // Default bet
 
     hitButton.disabled = true;
@@ -285,30 +297,44 @@ function determineWinner() {
     // Determine AI winners
     aiHands.forEach((hand, i) => {
         const aiId = `ai-${i}`;
-        const aiScore = calculateHandValue(hand);
-        let aiBust = aiScore > 21;
-        let aiMessage = `AI Player ${i + 1}: `;
+        if (playerChips[aiId] > 0) { // Only process AI players with chips
+            const aiScore = calculateHandValue(hand);
+            let aiBust = aiScore > 21;
+            let aiMessage = `AI Player ${i + 1}: `;
 
-        if (aiBust) {
-            aiMessage += 'busted!';
-        } else if (dealerBust) {
-            playerChips[aiId] += playerBets[aiId] * 2;
-            aiMessage += 'wins!';
-        } else if (aiScore === 21 && hand.length === 2) { // AI Blackjack
-            playerChips[aiId] += playerBets[aiId] * 2.5;
-            aiMessage += 'Blackjack! wins!';
-        } else if (aiScore > dealerScore) {
-            playerChips[aiId] += playerBets[aiId] * 2;
-            aiMessage += 'wins!';
-        } else if (dealerScore > aiScore) {
-            aiMessage += 'loses!';
-        } else {
-            playerChips[aiId] += playerBets[aiId];
-            aiMessage += 'pushes!';
+            if (aiBust) {
+                aiMessage += 'busted!';
+            } else if (dealerBust) {
+                playerChips[aiId] += playerBets[aiId] * 2;
+                aiMessage += 'wins!';
+            } else if (aiScore === 21 && hand.length === 2) { // AI Blackjack
+                playerChips[aiId] += playerBets[aiId] * 2.5;
+                aiMessage += 'Blackjack! wins!';
+            } else if (aiScore > dealerScore) {
+                playerChips[aiId] += playerBets[aiId] * 2;
+                aiMessage += 'wins!';
+            } else if (dealerScore > aiScore) {
+                aiMessage += 'loses!';
+            } else {
+                playerChips[aiId] += playerBets[aiId];
+                aiMessage += 'pushes!';
+            }
+            console.log(aiMessage);
+            document.getElementById(`ai-chips-${i}`).textContent = playerChips[aiId];
+
+            if (playerChips[aiId] <= 0) {
+                console.log(`AI Player ${i + 1} has run out of chips and is out of the game.`);
+                // Optionally, you can visually remove the player from the game board here
+            }
         }
-        console.log(aiMessage);
-        document.getElementById(`ai-chips-${i}`).textContent = playerChips[aiId];
     });
+
+    if (playerChips['user'] <= 0) {
+        displayMessage('You have run out of chips! Game over.');
+        startGameButton.disabled = true;
+        placeBetButton.disabled = true;
+        betInputElement.disabled = true;
+    }
 
     gamePhase = 'gameOver';
     startGameButton.disabled = false;
@@ -321,6 +347,7 @@ function placeBet() {
         playerBets['user'] = betAmount;
         playerChips['user'] -= betAmount;
         userChipsElement.textContent = playerChips['user'];
+        document.getElementById('user-bet').textContent = betAmount;
         betInputElement.disabled = true;
         placeBetButton.disabled = true;
 
@@ -331,6 +358,7 @@ function placeBet() {
             playerBets[aiId] = aiBet;
             playerChips[aiId] -= aiBet;
             document.getElementById(`ai-chips-${i}`).textContent = playerChips[aiId];
+            document.getElementById(`ai-bet-${i}`).textContent = aiBet;
         }
 
         dealHands();
