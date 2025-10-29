@@ -119,6 +119,7 @@ function displayMessage(message) {
 function resetGame() {
     dealerHandElement.innerHTML = '';
     dealerScoreElement.textContent = '0';
+    userHandElement.innerHTML = '';
     splitHandElement.innerHTML = '';
     userHands = [];
     activeHandIndex = 0;
@@ -189,7 +190,10 @@ function renderGame() {
     dealerScoreElement.textContent = calculateHandValue([dealerHand[1]]); // Only show visible card's value
 
     renderHand(userHands[0], userHandElement);
-    userScoreElement.textContent = calculateHandValue(userHands[0]);
+    if (userHands.length > 1) {
+        renderHand(userHands[1], splitHandElement);
+    }
+    userScoreElement.textContent = userHands.map(hand => calculateHandValue(hand)).join(' / ');
     userChipsElement.textContent = playerChips['user'];
 
     aiHands.forEach((hand, i) => {
@@ -335,48 +339,57 @@ function dealerTurn() {
 
 // Determine the winner
 function determineWinner() {
-    const userScore = calculateHandValue(userHand);
     const dealerScore = calculateHandValue(dealerHand);
+    const dealerBust = dealerScore > 21;
+    const dealerHasBlackjack = dealerScore === 21 && dealerHand.length === 2;
 
-    let userBust = userScore > 21;
-    let dealerBust = dealerScore > 21;
-    let userMessage = '';
+    let finalMessage = '';
 
     if (insuranceBet > 0) {
         if (dealerHasBlackjack) {
-            userMessage = 'Dealer has Blackjack! You win the insurance bet. ';
+            finalMessage = 'Dealer has Blackjack! You win the insurance bet. ';
             playerChips['user'] += insuranceBet * 3; // Insurance pays 2 to 1, so 3x the bet back
         } else {
-            userMessage = 'Dealer does not have Blackjack. You lose the insurance bet. ';
+            finalMessage = 'Dealer does not have Blackjack. You lose the insurance bet. ';
         }
     }
 
-    // User outcome
-    if (userBust) {
-        userMessage = 'You busted! Dealer wins.';
-    } else if (dealerHasBlackjack) {
-        if (userScore === 21 && userHand.length === 2) {
-            playerChips['user'] += playerBets['user']; // Push
-            userMessage = 'Push! You both have Blackjack.';
+    userHands.forEach((hand, index) => {
+        const userScore = calculateHandValue(hand);
+        const userBust = userScore > 21;
+        const userHasBlackjack = userScore === 21 && hand.length === 2;
+        const bet = playerBets.user[index];
+
+        let handMessage = `Hand ${index + 1}: `;
+
+        if (userBust) {
+            handMessage += 'Bust! You lose.';
+        } else if (dealerHasBlackjack) {
+            if (userHasBlackjack) {
+                playerChips['user'] += bet; // Push
+                handMessage += 'Push! You both have Blackjack.';
+            } else {
+                handMessage += 'Dealer has Blackjack! You lose.';
+            }
+        } else if (dealerBust) {
+            playerChips['user'] += bet * 2;
+            handMessage += 'Dealer busted! You win!';
+        } else if (userHasBlackjack) {
+            playerChips['user'] += bet * 2.5;
+            handMessage += 'Blackjack! You win!';
+        } else if (userScore > dealerScore) {
+            playerChips['user'] += bet * 2;
+            handMessage += 'You win!';
+        } else if (dealerScore > userScore) {
+            handMessage += 'Dealer wins!';
         } else {
-            userMessage = 'Dealer has Blackjack! You lose.';
+            playerChips['user'] += bet;
+            handMessage += 'Push!';
         }
-    } else if (dealerBust) {
-        playerChips['user'] += playerBets['user'] * 2; // Win 1x bet + original bet back
-        userMessage = 'Dealer busted! You win!';
-    } else if (userScore === 21 && userHand.length === 2) { // User Blackjack
-        playerChips['user'] += playerBets['user'] * 2.5; // Win 1.5x bet + original bet back
-        userMessage = 'Blackjack! You win!';
-    } else if (userScore > dealerScore) {
-        playerChips['user'] += playerBets['user'] * 2; // Win 1x bet + original bet back
-        userMessage = 'You win!';
-    } else if (dealerScore > userScore) {
-        userMessage = 'Dealer wins!';
-    } else {
-        playerChips['user'] += playerBets['user']; // Bet returned
-        userMessage = 'Push!';
-    }
-    displayMessage(userMessage);
+        finalMessage += `\n${handMessage}`;
+    });
+
+    displayMessage(finalMessage);
     userChipsElement.textContent = playerChips['user'];
 
     // Determine AI winners
