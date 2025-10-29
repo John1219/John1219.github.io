@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blackjack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <h1>Blackjack</h1>
+        <div id="dealer-section">
+            <h2>Dealer</h2>
+            <div id="dealer-hand" class="hand"></div>
+            <p>Score: <span id="dealer-score">0</span></p>
+        </div>
+        <div id="players-section">
+            <div id="ai-players-left"></div>
+            <div id="ai-players-right"></div>
+            <div id="user-player">
+                <h3>You</h3>
+                <div id="user-hand" class="hand"></div>
+                <p>Score: <span id="user-score">0</span></p>
+                <p>Chips: <span id="user-chips">5000</span></p>
+                <div id="betting-controls">
+                    <input type="number" id="bet-input" min="1" value="100">
+                    <button id="place-bet-button">Place Bet</button>
+                </div>
+                <div id="user-controls">
+                    <button id="hit-button">Hit</button>
+                    <button id="stand-button">Stand</button>
+                </div>
+            </div>
+        </div>
+        <div id="game-controls">
+            <button id="start-game-button">Start Game</button>
+        </div>
+        <div id="message-area"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

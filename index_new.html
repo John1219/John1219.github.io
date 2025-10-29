@@ -127,7 +127,7 @@
                 </div>
 
                 <div class="border-b border-slate-700 mb-4">
-                    <nav class_="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                    <nav id="detailTabs" class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
                         <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500 active" data-tab="summary">Summary & Rationale</button>
                         <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="stats">Stat Deep Dive & Chart</button>
                         <button class="detail-tab py-3 px-1 border-b-2 border-transparent text-sm font-medium text-slate-400 hover:text-slate-200 hover:border-slate-500" data-tab="scheme">Scheme & Matchup</button>
@@ -280,7 +280,6 @@
             ],
         };
 
-        // All new data from the updated report (13 games) - Corrected
         const allGameData = {
             "min-lac": {
                 id: "min-lac", away: "Minnesota Vikings", home: "Los Angeles Chargers", spread: "LAC -3.5", predictedScore: "LAC 27 - MIN 20", pick: "Chargers -3.5", confidence: 3, time: "Thu, 8:15 PM",
@@ -451,12 +450,12 @@
                 id: "den-cle", away: "Denver Broncos", home: "Cleveland Browns", spread: "DEN -3.5", predictedScore: "DEN 20 - CLE 16", pick: "Broncos -3.5", confidence: 3, time: "Sun, 1:00 PM",
                 analysis: {
                     projection: "The model projects a **narrow victory and cover for the Denver Broncos**. The deciding factor is the **catastrophic state of the Cleveland offense** combined with the Broncos' surprisingly elite defense. The Broncos' defense is perfectly positioned to exploit this weakness at home, where they are on a nine-game winning streak. The altitude also plays a significant factor.",
-                    stats: "Browns defense is **1st in total yards allowed** (256.1 YPG). Browns offense is **31st in points per play** and **30th in scoring**. Patriots offense is 'electric lately' with an EPA/Play of +0.08. The low total of 40.5 reflects defensive strength and offensive struggles.",
-                    scheme: "The decisive factor is the Patriots' ability to protect Maye against the Browns' ferocious front four (led by Myles Garrett). The Browns' timing-based offense under Stefanski will struggle against a disciplined Patriots 3-4 defense that excels at limiting mistakes.",
-                    betting: "Broncos are 3.5-point home favorites, with the highest total of the week at **50.5 points**. The high total reflects the vulnerability of the Cowboys' defense and the explosive potential of their offense.",
+                    stats: "Browns defense is **1st in total yards allowed** (256.1 YPG). Browns offense is **31st in points per play** and **30th in scoring**. Broncos offense is highly variable. The low total of 40.5 reflects defensive strength and offensive struggles.",
+                    scheme: "The decisive factor is the Broncos' ability to execute against the Browns' ferocious front four (led by Myles Garrett). The Browns' timing-based offense under Stefanski will struggle against a disciplined Broncos 3-4 defense that excels at limiting mistakes.",
+                    betting: "Broncos are 3.5-point favorites. The low total of 40.5 is a signal for a defensive struggle. The Broncos' defensive advantage makes them a solid play.",
                     injuries: "Browns TE **David Njoku** (knee) is questionable, which would be a needed boost. The Browns' only path to victory is through their defense creating turnovers.",
                 },
-                statsData: {labels: ['Overall DVOA', 'Offense EPA/Play', 'Defense DVOA', 'Turnover Differential'], awayStats: [15, -0.13, 2, -1], homeStats: [11, 0.08, 10, +5], awayColor: 'rgba(0, 34, 68, 0.8)', homeColor: 'rgba(255, 60, 0, 0.8)'}
+                statsData: {labels: ['Overall DVOA', 'Offense EPA/Play', 'Defense DVOA', 'Turnover Differential'], awayStats: [-0.01, 3, -1, 275.0], homeStats: [15, -0.13, 2, -1], awayColor: 'rgba(0, 34, 68, 0.8)', homeColor: 'rgba(255, 60, 0, 0.8)'}
             }
         };
 
@@ -471,6 +470,7 @@
             renderScorecard();
             renderTopPerformers('QB'); 
             attachNavListeners();
+            attachDetailTabListeners();
             attachTopPerformerListeners();
         }
 
@@ -515,7 +515,6 @@
             const grid = document.getElementById('gamesGrid');
             grid.innerHTML = ''; 
             
-            // Convert object to array for consistent sorting/rendering, although order is maintained by keys
             const gameKeys = Object.keys(allGameData).sort((a, b) => {
                 const timeA = allGameData[a].time;
                 const timeB = allGameData[b].time;
@@ -586,26 +585,26 @@
             });
             document.querySelector('.detail-tab[data-tab="summary"]').classList.add('active');
 
-            showDetailTab(gameId, 'summary');
-
-            document.querySelectorAll('.detail-tab').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
-                    e.target.classList.add('active');
-                    showDetailTab(gameId, e.target.dataset.tab);
-                });
-            });
+            // Force initial render of 'summary' tab
+            showDetailTab('summary');
         }
         
-        function showDetailTab(gameId, tabName) {
-            const game = allGameData[gameId];
+        function showDetailTab(tabName) {
+            const game = allGameData[currentGameId];
             const contentEl = document.getElementById('detailTabContent');
             
+            // Clean up old chart instance
             if (myStatsChart) {
                 myStatsChart.destroy();
                 myStatsChart = null;
             }
 
+            // This was the problematic block from the last change. It's been removed.
+            // The function now correctly uses the global `currentGameId` set when the detail view is opened.
+            if (!game) {
+                contentEl.innerHTML = `<p>Error: Could not find game data for ID: ${currentGameId}</p>`;
+                return;
+            }
             // Set up common content structure for a dossier entry
             const content = (title, body) => `
                 <div class="mb-6">
@@ -622,10 +621,20 @@
                     break;
                 case 'stats':
                     contentEl.innerHTML = content("Statistical Deep Dive (Core Components Synthesis)", game.analysis.stats) +
-                        `<div class="chart-container mt-6 bg-slate-700 p-4 rounded-lg">
-                            <canvas id="statsChart"></canvas>
-                        </div>`;
-                    renderStatsChart(gameId);
+                        `<div id="chartContainerDiv" class="chart-container mt-6 bg-slate-700 p-4 rounded-lg"></div>`;
+                    
+                    // Use setTimeout to ensure the container div is rendered before we try to manipulate it.
+                    // This is the definitive fix for the race condition.
+                    setTimeout(() => {
+                        const chartContainerDiv = document.getElementById('chartContainerDiv');
+                        if (!chartContainerDiv) return; // Safety check
+
+                        const newCanvasId = 'statsChart_' + Date.now();
+                        chartContainerDiv.style.height = '350px';
+                        chartContainerDiv.style.position = 'relative';
+                        chartContainerDiv.innerHTML = `<canvas id="${newCanvasId}"></canvas>`;
+                        renderStatsChart(currentGameId, newCanvasId);
+                    }, 0); // A timeout of 0ms is enough to push this to the next event loop cycle.
                     break;
                 case 'scheme':
                     contentEl.innerHTML = content("Scheme & Matchup Analysis (Core Components Synthesis)", game.analysis.scheme);
@@ -639,20 +648,14 @@
             }
         }
 
-        function renderStatsChart(gameId) {
+        function renderStatsChart(gameId, canvasId) {
             const game = allGameData[gameId];
             const stats = game.statsData;
-            const ctx = document.getElementById('statsChart').getContext('2d');
+            const ctx = document.getElementById(canvasId);
 
-            if (myStatsChart) {
-                myStatsChart.destroy();
-            }
+            if (!ctx) return; // Guard against canvas not being available yet
 
-            // Chart.js dark mode configuration
-            Chart.defaults.color = '#e2e8f0'; // Slate-200 for labels
-            Chart.defaults.borderColor = '#475569'; // Slate-600 for grid lines
-
-            myStatsChart = new Chart(ctx, {
+            myStatsChart = new Chart(ctx.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: stats.labels,
@@ -681,7 +684,8 @@
                         title: {
                             display: true,
                             text: 'Advanced Metric Comparison (Higher is Generally Better)',
-                            font: { size: 16 },
+                            font: { size: 16, weight: 'bold' },
+                            padding: { top: 10, bottom: 20 },
                             color: '#f8fafc' // Slate-50 for title
                         },
                         legend: {
@@ -707,12 +711,12 @@
                     scales: {
                         x: {
                             beginAtZero: true,
-                            grid: { color: '#334155' },
-                            ticks: { color: '#e2e8f0' }
+                            grid: { color: '#475569' }, // Slate-600
+                            ticks: { color: '#e2e8f0' } // Slate-200
                         },
                         y: {
-                            grid: { color: '#334155' },
-                            ticks: { color: '#e2e8f0' }
+                            grid: { display: false }, // Cleaner look
+                            ticks: { color: '#e2e8f0' } // Slate-200
                         }
                     }
                 }
@@ -742,6 +746,17 @@
                     myStatsChart = null;
                 }
             }
+        }
+
+        function attachDetailTabListeners() {
+            document.getElementById('detailTabs').addEventListener('click', (e) => {
+                if (e.target.classList.contains('detail-tab')) {
+                    const tabName = e.target.dataset.tab;
+                    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    showDetailTab(tabName);
+                }
+            });
         }
 
         function attachNavListeners() {
