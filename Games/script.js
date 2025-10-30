@@ -546,3 +546,4 @@ startGameButton.addEventListener('click', startGame);
 buyInButton.addEventListener('click', buyIn);
 
 resetGame();
+ 
